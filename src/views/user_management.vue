@@ -2,9 +2,15 @@
   <div class="user-management">
     <div class="header">
       <h2>用户管理</h2>
-      <div class="actions">
-        <button class="action-btn blacklist-btn" @click="handleBlacklistManage">黑名单管理</button>
-        <button class="action-btn whitelist-btn" @click="handleWhitelistManage">白名单管理</button>
+      <div class="header-right">
+        <div class="whitelist-status" :class="{ 'status-enabled': whitelistStatus, 'status-disabled': !whitelistStatus }" @click="toggleWhitelistStatus">
+          <span>白名单状态：{{ whitelistStatus ? '开启' : '关闭' }}</span>
+          <i class="status-icon">{{ whitelistStatus ? '√' : '×' }}</i>
+        </div>
+        <div class="actions">
+          <button class="action-btn blacklist-btn" @click="handleBlacklistManage">黑名单管理</button>
+          <button class="action-btn whitelist-btn" @click="handleWhitelistManage">白名单管理</button>
+        </div>
       </div>
     </div>
     
@@ -29,7 +35,7 @@
             <td>{{ user.proxy_target }}</td>
             <td class="actions-cell">
               <button class="btn btn-whitelist" @click="addToWhitelist(user)">添加白名单</button>
-              <button class="btn btn-ban" @click="banUser(user)">封禁</button>
+              <button class="btn btn-ban" @click="banUser(user)">添加黑名单</button>
               <button class="btn btn-kick" @click="kickUser(user)">踢出</button>
             </td>
           </tr>
@@ -46,11 +52,14 @@ export default {
   name: 'UserManage',
   data() {
     return {
-      onlineUsers: []
+      onlineUsers: [],
+      whitelist: [], // 新增白名单列表
+      whitelistStatus: false // 白名单开启状态
     }
   },
   async mounted() {
     await this.fetchOnlineUsers();
+    await this.fetchWhitelist(); // 挂载时获取白名单
   },
   methods: {
     async fetchOnlineUsers() {
@@ -71,9 +80,24 @@ export default {
         console.error('获取在线用户失败:', error);
       }
     },
+    async fetchWhitelist() {
+      try {
+        const response = await axios.get('/api/get_whitelist');
+        if (response.data.status === 200) {
+          this.whitelist = response.data.white_list || [];
+          this.whitelistStatus = response.data.whitelist_status || false;
+        } else {
+          this.whitelist = [];
+          this.whitelistStatus = false;
+        }
+      } catch (error) {
+        this.whitelist = [];
+        this.whitelistStatus = false;
+      }
+    },
     getWhitelistStatus(user) {
-      // TODO: 实现白名单状态检查逻辑
-      return '白名单玩家';
+      // 查询玩家是否在白名单列表
+      return this.whitelist.includes(user.username) ? '白名单玩家' : '非白名单玩家';
     },
     formatOnlineTime(timestamp) {
       // 格式化在线时间
@@ -102,17 +126,64 @@ export default {
       
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     },
-    addToWhitelist(user) {
-      // TODO: 实现添加白名单逻辑
-      console.log('添加白名单:', user.username);
+    async addToWhitelist(user) {
+      try {
+        const response = await axios.post('/api/add_whitelist_user', { username: user.username });
+        if (response.data && response.data.status === 200) {
+          await this.fetchWhitelist();
+          alert('添加成功');
+        } else {
+          alert('添加失败：' + (response.data?.message || '未知错误'));
+        }
+      } catch (error) {
+        alert('添加失败：' + (error.response?.data?.message || error.message));
+      }
     },
-    banUser(user) {
-      // TODO: 实现封禁用户逻辑
-      console.log('封禁用户:', user.username);
+    async banUser(user) {
+      try {
+        const response = await axios.post('/api/add_blacklist_user', { username: user.username });
+        if (response.data && response.data.status === 200) {
+          alert('添加成功');
+        } else {
+          alert('添加失败：' + (response.data?.message || '未知错误'));
+        }
+      } catch (error) {
+        alert('添加失败：' + (error.response?.data?.message || error.message));
+      }
     },
-    kickUser(user) {
-      // TODO: 实现踢出用户逻辑
-      console.log('踢出用户:', user.username);
+    async kickUser(user) {
+      try {
+        const response = await axios.post('/api/kick_player', { username: user.username });
+        if (response.data && response.data.status === 200) {
+          await this.fetchOnlineUsers();
+          alert('踢出成功');
+        } else {
+          alert('踢出失败：' + (response.data?.message || '未知错误'));
+        }
+      } catch (error) {
+        alert('踢出失败：' + (error.response?.data?.message || error.message));
+      }
+    },
+    async toggleWhitelistStatus() {
+      try {
+        let response;
+        if (this.whitelistStatus) {
+          // 当前是开启状态，点击后禁用
+          response = await axios.get('/api/disable_whitelist');
+        } else {
+          // 当前是关闭状态，点击后启用
+          response = await axios.get('/api/enable_whitelist');
+        }
+        
+        if (response.data && response.data.status === 200) {
+          this.whitelistStatus = !this.whitelistStatus;
+          alert(`白名单已${this.whitelistStatus ? '启用' : '禁用'}`);
+        } else {
+          alert('操作失败：' + (response.data?.message || '未知错误'));
+        }
+      } catch (error) {
+        alert('操作失败：' + (error.response?.data?.message || error.message));
+      }
     },
     handleBlacklistManage() {
       this.$router.push('/blacklist_manage')
@@ -142,6 +213,59 @@ export default {
 .header h2 {
   margin: 0;
   color: #333;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.whitelist-status {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 2px solid;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+}
+
+.whitelist-status:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.status-enabled {
+  background-color: #d4edda;
+  border-color: #28a745;
+  color: #155724;
+}
+
+.status-enabled:hover {
+  background-color: #c3e6cb;
+}
+
+.status-disabled {
+  background-color: #f8d7da;
+  border-color: #dc3545;
+  color: #721c24;
+}
+
+.status-disabled:hover {
+  background-color: #f1b0b7;
+}
+
+.whitelist-status span {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.status-icon {
+  font-size: 16px;
+  font-weight: bold;
 }
 
 .actions {

@@ -199,66 +199,73 @@ export default {
     },
     
     async confirmAdd() {
-      if (!this.newUsername.trim()) {
-        alert('请输入用户名')
-        return
+      const username = this.newUsername.trim();
+      // 校验：不能为空且不能包含中文
+      if (!username) {
+        alert('请输入用户名');
+        return;
       }
-      
+      if (/[\u4e00-\u9fa5]/.test(username)) {
+        alert('用户名不能包含中文字符');
+        return;
+      }
       try {
-        await axios.post('/api/add_blacklist', {
-          username: this.newUsername.trim()
-        })
-        
-        this.closeDialog()
-        this.fetchBlacklist()
-        alert('添加成功')
+        const response = await axios.post('/api/add_blacklist_user', { username });
+        if (response.data && response.data.status === 200) {
+          this.closeDialog();
+          await this.fetchBlacklist();
+          alert('添加成功');
+        } else {
+          alert('添加失败：' + (response.data?.message || '未知错误'));
+        }
       } catch (error) {
-        console.error('添加黑名单失败:', error)
-        alert('添加失败：' + (error.response?.data?.message || error.message))
+        alert('添加失败：' + (error.response?.data?.message || error.message));
       }
     },
     
     async removeFromBlacklist(username) {
       if (!confirm(`确定要将 ${username} 移出黑名单吗？`)) {
-        return
+        return;
       }
-      
       try {
-        await axios.post('/api/remove_blacklist', {
-          username: username
-        })
-        
-        this.fetchBlacklist()
-        this.selectedUsers = this.selectedUsers.filter(u => u !== username)
-        alert('移出成功')
+        const response = await axios.post('/api/remove_blacklist_user', { username });
+        if (response.data && response.data.status === 200) {
+          await this.fetchBlacklist();
+          alert('移出成功');
+        } else {
+          alert('移出失败：' + (response.data?.message || '未知错误'));
+        }
       } catch (error) {
-        console.error('移出黑名单失败:', error)
-        alert('移出失败：' + (error.response?.data?.message || error.message))
+        alert('移出失败：' + (error.response?.data?.message || error.message));
       }
     },
-    
+
     async handleBatchRemove() {
       if (this.selectedUsers.length === 0) {
-        alert('请选择要移出的用户')
-        return
+        alert('请选择要移出的用户');
+        return;
       }
-      
       if (!confirm(`确定要批量移出 ${this.selectedUsers.length} 个用户吗？`)) {
-        return
+        return;
       }
-      
-      try {
-        await axios.post('/api/batch_remove_blacklist', {
-          usernames: this.selectedUsers
-        })
-        
-        this.fetchBlacklist()
-        this.selectedUsers = []
-        alert('批量移出成功')
-      } catch (error) {
-        console.error('批量移出黑名单失败:', error)
-        alert('批量移出失败：' + (error.response?.data?.message || error.message))
+      let allSuccess = true;
+      for (const username of this.selectedUsers) {
+        try {
+          const response = await axios.post('/api/remove_blacklist_user', { username });
+          if (!(response.data && response.data.status === 200)) {
+            allSuccess = false;
+          }
+        } catch (error) {
+          allSuccess = false;
+        }
       }
+      await this.fetchBlacklist();
+      if (allSuccess) {
+        alert('批量移出成功');
+      } else {
+        alert('部分用户移除失败，请检查后重试');
+      }
+      this.selectedUsers = [];
     },
     
     // 分页相关方法
