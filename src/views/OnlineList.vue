@@ -3,6 +3,8 @@
     <div class="grid-item">
         <p>系统启动时长:{{ "25时30分16秒" }}</p>
         <p>在线玩家数:{{ "9999" }}</p>
+        <p>当前代理IP:{{ "127.0.0.1" }}</p>
+        <p>当前代理端口:{{ "25565" }}</p>
     </div>
     <div class="grid-item">
       <h3 style="text-align:center;">累计在线时长前十/分钟</h3>

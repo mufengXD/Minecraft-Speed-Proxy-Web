@@ -35,7 +35,11 @@ axiosInstance.interceptors.response.use(
       
       // 提示用户并跳转到登录页
       alert('登录已过期，请重新登录');
-      window.location.href = '/';
+      
+      // 使用多种方式确保跳转成功
+      setTimeout(() => {
+        window.location.replace('/');
+      }, 100);
       
       return Promise.reject(error);
     }
