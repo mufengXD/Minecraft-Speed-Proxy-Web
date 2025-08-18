@@ -1,5 +1,6 @@
 <template>
   <div class="blacklist-management">
+    <GlobalLog />
     <div class="header">
       <h2>黑名单管理</h2>
       <div class="actions">
@@ -21,7 +22,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="username in paginatedUsers" :key="username" class="user-row">
+          <tr v-for="username in paginatedUsers" :key="username" class="user-row" :class="{ 'selected': selectedUsers.includes(username) }">
             <td>
               <input 
                 type="checkbox" 
@@ -112,9 +113,12 @@
 
 <script>
 import axios from '../utils/axios.js'
+import GlobalLog from '../components/GlobalLog.vue'
+import logManager from '../utils/logManager.js'
 
 export default {
   name: 'BlacklistManage',
+  components: { GlobalLog },
   data() {
     return {
       blackList: [],
@@ -202,24 +206,25 @@ export default {
       const username = this.newUsername.trim();
       // 校验：不能为空且不能包含中文
       if (!username) {
-        alert('请输入用户名');
+        logManager.warning('请输入用户名');
         return;
       }
       if (/[\u4e00-\u9fa5]/.test(username)) {
-        alert('用户名不能包含中文字符');
+        logManager.warning('用户名不能包含中文字符');
         return;
       }
       try {
+        logManager.info(`正在添加 ${username} 到黑名单...`);
         const response = await axios.post('/api/add_blacklist_user', { username });
         if (response.data && response.data.status === 200) {
           this.closeDialog();
           await this.fetchBlacklist();
-          alert('添加成功');
+          logManager.success(`成功添加 ${username} 到黑名单`);
         } else {
-          alert('添加失败：' + (response.data?.message || '未知错误'));
+          logManager.error(`添加失败：${response.data?.message || '未知错误'}`);
         }
       } catch (error) {
-        alert('添加失败：' + (error.response?.data?.message || error.message));
+        logManager.error(`添加失败：${error.response?.data?.message || error.message}`);
       }
     },
     
@@ -228,43 +233,55 @@ export default {
         return;
       }
       try {
+        logManager.info(`正在移出 ${username} 从黑名单...`);
         const response = await axios.post('/api/remove_blacklist_user', { username });
         if (response.data && response.data.status === 200) {
           await this.fetchBlacklist();
-          alert('移出成功');
+          logManager.success(`成功移出 ${username} 从黑名单`);
         } else {
-          alert('移出失败：' + (response.data?.message || '未知错误'));
+          logManager.error(`移出失败：${response.data?.message || '未知错误'}`);
         }
       } catch (error) {
-        alert('移出失败：' + (error.response?.data?.message || error.message));
+        logManager.error(`移出失败：${error.response?.data?.message || error.message}`);
       }
     },
 
     async handleBatchRemove() {
       if (this.selectedUsers.length === 0) {
-        alert('请选择要移出的用户');
+        logManager.warning('请选择要移出的用户');
         return;
       }
       if (!confirm(`确定要批量移出 ${this.selectedUsers.length} 个用户吗？`)) {
         return;
       }
-      let allSuccess = true;
+      
+      logManager.info(`正在批量移出 ${this.selectedUsers.length} 个用户...`);
+      let successCount = 0;
+      let failCount = 0;
+      
       for (const username of this.selectedUsers) {
         try {
           const response = await axios.post('/api/remove_blacklist_user', { username });
-          if (!(response.data && response.data.status === 200)) {
-            allSuccess = false;
+          if (response.data && response.data.status === 200) {
+            successCount++;
+          } else {
+            failCount++;
           }
         } catch (error) {
-          allSuccess = false;
+          failCount++;
         }
       }
+      
       await this.fetchBlacklist();
-      if (allSuccess) {
-        alert('批量移出成功');
+      
+      if (failCount === 0) {
+        logManager.success(`成功批量移出 ${successCount} 个用户`);
+      } else if (successCount === 0) {
+        logManager.error(`批量移出失败，${failCount} 个用户操作失败`);
       } else {
-        alert('部分用户移除失败，请检查后重试');
+        logManager.warning(`批量移出完成：成功 ${successCount} 个，失败 ${failCount} 个`);
       }
+      
       this.selectedUsers = [];
     },
     
@@ -380,6 +397,15 @@ export default {
 
 .user-row:hover {
   background: #f8f9fa;
+}
+
+.user-row.selected {
+  background: #e3f2fd !important;
+  border-left: 3px solid #2196f3;
+}
+
+.user-row.selected:hover {
+  background: #bbdefb !important;
 }
 
 .actions-cell {

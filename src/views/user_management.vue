@@ -1,11 +1,12 @@
 <template>
   <div class="user-management">
+    <GlobalLog />
     <div class="header">
       <h2>用户管理</h2>
       <div class="header-right">
         <div class="whitelist-status" :class="{ 'status-enabled': whitelistStatus, 'status-disabled': !whitelistStatus }" @click="toggleWhitelistStatus">
           <span>白名单状态：{{ whitelistStatus ? '开启' : '关闭' }}</span>
-          <i class="status-icon">{{ whitelistStatus ? '√' : '×' }}</i>
+          <i class="status-icon">{{ whitelistStatus ? '●' : '○' }}</i>
         </div>
         <div class="actions">
           <button class="action-btn blacklist-btn" @click="handleBlacklistManage">黑名单管理</button>
@@ -47,9 +48,12 @@
 
 <script>
 import axios from '../utils/axios.js'
+import GlobalLog from '../components/GlobalLog.vue'
+import logManager from '../utils/logManager.js'
 
 export default {
   name: 'UserManage',
+  components: { GlobalLog },
   data() {
     return {
       onlineUsers: [],
@@ -128,45 +132,51 @@ export default {
     },
     async addToWhitelist(user) {
       try {
+        logManager.info(`正在将 ${user.username} 添加到白名单...`);
         const response = await axios.post('/api/add_whitelist_user', { username: user.username });
         if (response.data && response.data.status === 200) {
           await this.fetchWhitelist();
-          alert('添加成功');
+          logManager.success(`成功将 ${user.username} 添加到白名单`);
         } else {
-          alert('添加失败：' + (response.data?.message || '未知错误'));
+          logManager.error(`添加白名单失败：${response.data?.message || '未知错误'}`);
         }
       } catch (error) {
-        alert('添加失败：' + (error.response?.data?.message || error.message));
+        logManager.error(`添加白名单失败：${error.response?.data?.message || error.message}`);
       }
     },
     async banUser(user) {
       try {
+        logManager.info(`正在将 ${user.username} 添加到黑名单...`);
         const response = await axios.post('/api/add_blacklist_user', { username: user.username });
         if (response.data && response.data.status === 200) {
-          alert('添加成功');
+          logManager.success(`成功将 ${user.username} 添加到黑名单`);
         } else {
-          alert('添加失败：' + (response.data?.message || '未知错误'));
+          logManager.error(`添加黑名单失败：${response.data?.message || '未知错误'}`);
         }
       } catch (error) {
-        alert('添加失败：' + (error.response?.data?.message || error.message));
+        logManager.error(`添加黑名单失败：${error.response?.data?.message || error.message}`);
       }
     },
     async kickUser(user) {
       try {
+        logManager.info(`正在踢出玩家 ${user.username}...`);
         const response = await axios.post('/api/kick_player', { username: user.username });
         if (response.data && response.data.status === 200) {
           await this.fetchOnlineUsers();
-          alert('踢出成功');
+          logManager.success(`成功踢出玩家 ${user.username}`);
         } else {
-          alert('踢出失败：' + (response.data?.message || '未知错误'));
+          logManager.error(`踢出失败：${response.data?.message || '未知错误'}`);
         }
       } catch (error) {
-        alert('踢出失败：' + (error.response?.data?.message || error.message));
+        logManager.error(`踢出失败：${error.response?.data?.message || error.message}`);
       }
     },
     async toggleWhitelistStatus() {
       try {
         let response;
+        const action = this.whitelistStatus ? '禁用' : '启用';
+        logManager.info(`正在${action}白名单...`);
+        
         if (this.whitelistStatus) {
           // 当前是开启状态，点击后禁用
           response = await axios.get('/api/disable_whitelist');
@@ -177,12 +187,12 @@ export default {
         
         if (response.data && response.data.status === 200) {
           this.whitelistStatus = !this.whitelistStatus;
-          alert(`白名单已${this.whitelistStatus ? '启用' : '禁用'}`);
+          logManager.success(`白名单已${this.whitelistStatus ? '启用' : '禁用'}`);
         } else {
-          alert('操作失败：' + (response.data?.message || '未知错误'));
+          logManager.error(`操作失败：${response.data?.message || '未知错误'}`);
         }
       } catch (error) {
-        alert('操作失败：' + (error.response?.data?.message || error.message));
+        logManager.error(`操作失败：${error.response?.data?.message || error.message}`);
       }
     },
     handleBlacklistManage() {

@@ -88,10 +88,22 @@ export default {
     
     async fetchSystemInfo() {
       try {
-        const response = await axios.get('/api/get_system_info');
+        const response = await axios.get('/api/get_start_time');
         if (response.data.status === 200) {
-          this.systemStartTime = this.formatUptime(response.data.uptime);
+          const startTime = response.data.start_time;
+          const nowTime = response.data.now_time;
+          const uptimeSeconds = nowTime - startTime;
+          
+          console.log('获取系统时间成功:', {
+            startTime,
+            nowTime,
+            uptimeSeconds,
+            formatted: this.formatUptime(uptimeSeconds)
+          });
+          
+          this.systemStartTime = this.formatUptime(uptimeSeconds);
         } else {
+          console.error('获取系统时间失败:', response.data.message);
           this.systemStartTime = "未知";
         }
       } catch (error) {
@@ -101,7 +113,7 @@ export default {
     },
     
     formatUptime(seconds) {
-      if (!seconds || isNaN(seconds)) {
+      if (!seconds || isNaN(seconds) || seconds < 0) {
         return "未知";
       }
       

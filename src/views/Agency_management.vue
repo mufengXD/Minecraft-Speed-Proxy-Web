@@ -1,8 +1,6 @@
 <template>
   <div>
     <h2>代理管理</h2>
-    <!-- <MultiSelect v-model="selected" :options="proxyOptions" />
-    <p>已选：{{ selected }}</p> -->
   </div>
 </template>
 
