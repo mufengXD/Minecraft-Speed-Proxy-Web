@@ -28,9 +28,13 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="user in onlineUsers" :key="user.uuid" class="user-row">
+          <tr v-for="user in paginatedUsers" :key="user.uuid" class="user-row">
             <td>{{ user.username }}</td>
-            <td>{{ getWhitelistStatus(user) }}</td>
+            <td>
+              <span :class="['status-badge', isUserInWhitelist(user) ? 'status-active' : 'status-inactive']">
+                {{ getWhitelistStatus(user) }}
+              </span>
+            </td>
             <td>{{ formatOnlineTime(user.online_time_stamp) }}</td>
             <td>{{ formatBytes(user.current_proxy_flow) }}</td>
             <td>{{ user.proxy_target }}</td>
@@ -40,8 +44,32 @@
               <button class="btn btn-kick" @click="kickUser(user)">踢出</button>
             </td>
           </tr>
+          <tr v-if="onlineUsers.length === 0">
+            <td colspan="6" class="no-data">暂无在线用户</td>
+          </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- 分页控件 -->
+    <div class="pagination-container" v-if="totalPages > 1">
+      <div class="pagination-info">
+        共 {{ totalUsers }} 条记录，第 {{ currentPage }} / {{ totalPages }} 页
+      </div>
+      <div class="pagination-controls">
+        <button @click="prevPage" :disabled="currentPage === 1" class="btn-pagination">上一页</button>
+        <span class="page-numbers">
+          <button 
+            v-for="page in visiblePages" 
+            :key="page"
+            @click="goToPage(page)"
+            :class="['btn-page', { 'active': page === currentPage }]"
+          >
+            {{ page }}
+          </button>
+        </span>
+        <button @click="nextPage" :disabled="currentPage === totalPages" class="btn-pagination">下一页</button>
+      </div>
     </div>
   </div>
 </template>
@@ -58,7 +86,31 @@ export default {
     return {
       onlineUsers: [],
       whitelist: [], // 新增白名单列表
-      whitelistStatus: false // 白名单开启状态
+      whitelistStatus: false, // 白名单开启状态
+      currentPage: 1,
+      pageSize: 10
+    }
+  },
+  computed: {
+    totalUsers() {
+      return this.onlineUsers.length;
+    },
+    totalPages() {
+      return Math.ceil(this.totalUsers / this.pageSize);
+    },
+    paginatedUsers() {
+      const start = (this.currentPage - 1) * this.pageSize;
+      const end = start + this.pageSize;
+      return this.onlineUsers.slice(start, end);
+    },
+    visiblePages() {
+      const pages = [];
+      const start = Math.max(1, this.currentPage - 2);
+      const end = Math.min(this.totalPages, this.currentPage + 2);
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      return pages;
     }
   },
   async mounted() {
@@ -99,9 +151,13 @@ export default {
         this.whitelistStatus = false;
       }
     },
+    isUserInWhitelist(user) {
+      // 判断用户是否在白名单中
+      return this.whitelist.includes(user.username);
+    },
     getWhitelistStatus(user) {
       // 查询玩家是否在白名单列表
-      return this.whitelist.includes(user.username) ? '白名单玩家' : '非白名单玩家';
+      return this.whitelist.includes(user.username) ? '白名单玩家' : '普通玩家';
     },
     formatOnlineTime(timestamp) {
       // 格式化在线时间
@@ -200,6 +256,26 @@ export default {
     },
     handleWhitelistManage() {
       this.$router.push('/whitelist_manage')
+    },
+    changePage(page) {
+      this.currentPage = page;
+    },
+    
+    // 分页方法
+    prevPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--;
+      }
+    },
+    
+    nextPage() {
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++;
+      }
+    },
+    
+    goToPage(page) {
+      this.currentPage = page;
     }
   }
 }
@@ -208,9 +284,6 @@ export default {
 <style scoped>
 .user-management {
   padding: 20px;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
 }
 
 .header {
@@ -311,41 +384,63 @@ export default {
 }
 
 .table-container {
-  flex: 1;
-  overflow-y: auto;
-  border: 1px solid #ddd;
-  border-radius: 8px;
   background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-bottom: 20px;
 }
 
 .user-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
-}
-
-.user-table thead {
-  background-color: #f8f9fa;
-  position: sticky;
-  top: 0;
-  z-index: 10;
 }
 
 .user-table th,
 .user-table td {
-  padding: 12px 15px;
+  padding: 12px;
   text-align: left;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #ebeef5;
 }
 
 .user-table th {
+  background-color: #f5f7fa;
   font-weight: 600;
-  color: #555;
-  border-bottom: 2px solid #ddd;
+  color: #333;
 }
 
-.user-row:hover {
-  background-color: #f8f9fa;
+.user-table tr {
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.user-table tr:hover {
+  background-color: #f5f7fa;
+}
+
+.no-data {
+  text-align: center;
+  color: #909399;
+  font-style: italic;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-active {
+  background-color: #f0f9ff;
+  color: #409eff;
+  border: 1px solid #b3d8ff;
+}
+
+.status-inactive {
+  background-color: #f5f7fa;
+  color: #909399;
+  border: 1px solid #d3d4d6;
 }
 
 .actions-cell {
@@ -353,39 +448,89 @@ export default {
 }
 
 .btn {
-  padding: 6px 12px;
+  padding: 4px 8px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
-  margin-right: 5px;
+  margin-right: 8px;
   transition: background-color 0.3s;
 }
 
 .btn-whitelist {
-  background-color: #3498db;
+  background-color: #67c23a;
   color: white;
 }
 
 .btn-whitelist:hover {
-  background-color: #2980b9;
+  background-color: #85ce61;
 }
 
 .btn-ban {
-  background-color: #e74c3c;
+  background-color: #f56c6c;
   color: white;
 }
 
 .btn-ban:hover {
-  background-color: #c0392b;
+  background-color: #f78989;
 }
 
 .btn-kick {
-  background-color: #f39c12;
+  background-color: #e6a23c;
   color: white;
 }
 
 .btn-kick:hover {
-  background-color: #e67e22;
+  background-color: #ebb563;
+}
+
+.pagination-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.pagination-info {
+  color: #606266;
+  font-size: 14px;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-pagination, .btn-page {
+  padding: 6px 12px;
+  border: 1px solid #dcdfe6;
+  background: white;
+  color: #606266;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.btn-pagination:hover, .btn-page:hover {
+  color: #409eff;
+  border-color: #c6e2ff;
+}
+
+.btn-pagination:disabled {
+  color: #c0c4cc;
+  cursor: not-allowed;
+}
+
+.btn-page.active {
+  background-color: #409eff;
+  color: white;
+  border-color: #409eff;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 4px;
 }
 </style>

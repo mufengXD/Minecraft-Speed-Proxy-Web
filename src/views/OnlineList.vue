@@ -2,6 +2,7 @@
   <div class="grid-demo">
     <div class="grid-item">
         <p>系统启动时长: {{ systemStartTime }}</p>
+        <p>默认代理IP:{{ "hypixel.net" }}</p>
         <p>在线玩家数: {{ onlineUsers.length }}</p>
     </div>
     <div class="grid-item">
@@ -16,9 +17,24 @@
       <div ref="lineChart" style="width: 100%; height: 100%;"></div>
     </div>
     <div class="grid-item">
+      <h3 style="text-align:center;">后端日志</h3>
+      <div class="log-container">
+        <div v-if="logs.length === 0" class="no-data">
+          暂无日志数据
+        </div>
+        <div v-else class="log-list">
+          <div 
+            v-for="(log, index) in logs" 
+            :key="index" 
+            class="log-item"
+          >
+            <span class="log-time">{{ formatLogTime(log.timestamp) }}</span>
+            <span class="log-message">{{ log.message }}</span>
+          </div>
+        </div>
+      </div>
       <div class="refresh-info">
-        <p style="font-size: 14px; color: #666;">数据每30秒自动刷新</p>
-        <button @click="refreshData" class="refresh-btn">立即刷新</button>
+        <p style="font-size: 14px; color: #666;">数据每15秒自动刷新</p>
       </div>
     </div>
   </div>
@@ -42,6 +58,7 @@ export default {
       chartHeight: 220,
       onlineUsers: [],
       systemStartTime: "获取中...",
+      logs: [],
       refreshTimer: null
     }
   },
@@ -52,15 +69,19 @@ export default {
     // 获取系统启动时长
     await this.fetchSystemInfo();
     
+    // 获取后端日志
+    await this.fetchLogs();
+    
     // 初始化图表
     this.initCharts();
     
-    // 设置定时刷新（每30秒刷新一次）
+    // 设置定时刷新（每15秒刷新一次）
     this.refreshTimer = setInterval(async () => {
       await this.fetchOnlineUsers();
       await this.fetchSystemInfo();
+      await this.fetchLogs();
       this.updateCharts();
-    }, 30000);
+    }, 15000);
   },
   
   beforeUnmount() {
@@ -109,6 +130,43 @@ export default {
       } catch (error) {
         console.error('获取系统信息失败:', error);
         this.systemStartTime = "获取失败";
+      }
+    },
+    
+    async fetchLogs() {
+      try {
+        const response = await axios.get('/api/get_logs');
+        if (response.data.status === 200) {
+          // 接收到的日志数组反序显示但不重新排序
+          this.logs = response.data.logs;
+          console.log('获取后端日志成功:', response.data);
+        } else {
+          console.error('获取后端日志失败:', response.data.message);
+          this.logs = [];
+        }
+      } catch (error) {
+        console.error('获取后端日志失败:', error);
+        this.logs = [];
+      }
+    },
+    
+    formatLogTime(timestamp) {
+      if (!timestamp) return '未知时间';
+      
+      try {
+        // 将后端时间戳转换为本地时间显示
+        const date = new Date(timestamp * 1000); // 假设后端返回秒级时间戳
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+      } catch (error) {
+        console.error('时间格式化失败:', error);
+        return '时间格式错误';
       }
     },
     
@@ -280,6 +338,7 @@ export default {
     async refreshData() {
       await this.fetchOnlineUsers();
       await this.fetchSystemInfo();
+      await this.fetchLogs();
       this.updateCharts();
     }
   }
@@ -342,6 +401,47 @@ p {
 
 .refresh-info {
   text-align: center;
+}
+
+.log-container {
+  flex: 1;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.log-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  max-height: 250px;
+  scrollbar-width: none; /* Firefox */
+}
+.log-list::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Edge */
+}
+
+.log-item {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 8px;
+  padding: 6px 8px;
+  background: #f9f9f9;
+  border-radius: 4px;
+  border-left: 3px solid #409eff;
+}
+
+.log-time {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 2px;
+}
+
+.log-message {
+  font-size: 14px;
+  color: #333;
+  word-wrap: break-word;
 }
 
 .refresh-btn {

@@ -1,18 +1,21 @@
 import axios from 'axios';
 
+// 可统一修改请求前缀
+const API_BASE_URL = 'http://127.0.0.1:8081';
+
 // 创建 axios 实例
 const axiosInstance = axios.create({
+  baseURL: API_BASE_URL,
   timeout: 10000
-  // 不加 withCredentials，保证请求最普通
 });
 
-// 请求拦截器：自动添加 Authorization 头
+// 请求拦截器：自动添加 Authorize 头
 axiosInstance.interceptors.request.use(
   config => {
     // 获取本地存储的 token（如果有的话）
     const token = localStorage.getItem('token');
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers.Authorize = token;
     }
     return config;
   },

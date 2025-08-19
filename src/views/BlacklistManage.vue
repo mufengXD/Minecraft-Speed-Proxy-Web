@@ -126,7 +126,7 @@ export default {
       showAddDialog: false,
       newUsername: '',
       currentPage: 1,
-      pageSize: 20,
+      pageSize: 10,
       loading: false
     }
   },

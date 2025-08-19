@@ -16,6 +16,11 @@
           <!-- <h2>管理系统</h2> -->
         </div>
         <div class="banner-right">
+          <div class="banner-item" @click="refreshData" title="刷新数据">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+            </svg>
+          </div>
           <div class="banner-item" @click="openGitHub" title="前往项目GitHub">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
               <path fill="currentColor" d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5c.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34c-.46-1.16-1.11-1.47-1.11-1.47c-.91-.62.07-.6.07-.6c1 .07 1.53 1.03 1.53 1.03c.87 1.52 2.34 1.07 2.91.83c.09-.65.35-1.09.63-1.34c-2.22-.25-4.55-1.11-4.55-4.92c0-1.11.38-2 1.03-2.71c-.1-.25-.45-1.29.1-2.64c0 0 .84-.27 2.75 1.02c.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02c.55 1.35.2 2.39.1 2.64c.65.71 1.03 1.6 1.03 2.71c0 3.82-2.34 4.66-4.57 4.91c.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"/>
@@ -37,11 +42,32 @@
         <router-view />
       </main>
     </div>
+    <div v-if="showSettings" class="settings-modal" @click.stop="closeSettings">
+      <div class="settings-mask"></div>
+      <div class="settings-content" @click.stop>
+        <h3>系统设置</h3>
+        <label for="maxUsersInput">最大在线人数：</label>
+        <input
+          id="maxUsersInput"
+          type="number"
+          v-model="maxUsersInput"
+          placeholder="-1表示无限制"
+          @keyup.enter="submitMaxUsers"
+        />
+        <!-- <div class="settings-desc">-1表示无限制</div> -->
+        <div class="settings-actions">
+          <button @click="submitMaxUsers">确认</button>
+          <button @click="closeSettings">关闭</button>
+        </div>
+        <div v-if="settingsMsg" class="settings-msg">{{ settingsMsg }}</div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import axios from '@/utils/axios.js'
+import logManager from '@/utils/logManager.js'
 
 export default {
   name: 'MainUI',
@@ -51,15 +77,51 @@ export default {
         { name: '主页', path: '/online' },
         { name: '用户管理', path: '/user_management' },
         { name: '代理管理', path: '/Agency_management' }
-      ]
+      ],
+      showSettings: false,
+      maxUsersInput: '',
+      settingsMsg: ''
     }
   },
   methods: {
     go(path) {
       this.$router.push(path)
     },
+    refreshData() {
+      // 通过路由重新加载当前页面来实现刷新
+      const currentPath = this.$route.path;
+      this.$router.replace('/temp').then(() => {
+        this.$router.replace(currentPath);
+      });
+      // 调用GlobalLog提示
+      logManager.success('已刷新');
+    },
     openSettings() {
-      alert('打开设置页面')
+      this.showSettings = true;
+      this.maxUsersInput = '';
+      this.settingsMsg = '';
+    },
+    closeSettings() {
+      this.showSettings = false;
+    },
+    async submitMaxUsers() {
+      if (this.maxUsersInput === '') {
+        this.settingsMsg = '请输入最大在线人数';
+        return;
+      }
+      try {
+        const response = await axios.post('/api/set_max_users', { max_users: Number(this.maxUsersInput) });
+        if (response.data.status === 200) {
+          this.settingsMsg = '设置成功';
+          setTimeout(() => {
+            this.closeSettings();
+          }, 800);
+        } else {
+          this.settingsMsg = response.data.message || '设置失败';
+        }
+      } catch (err) {
+        this.settingsMsg = '请求失败';
+      }
     },
     openGitHub() {
       window.open('https://github.com/AllesUgo/Minecraft-Speed-Proxy', '_blank');
@@ -163,5 +225,77 @@ export default {
   flex: 1; 
   padding: 24px; 
   overflow: auto;
+}
+.settings-modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.settings-mask {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.3);
+  z-index: 1;
+}
+.settings-content {
+  position: relative;
+  z-index: 2;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+  padding: 32px 28px 24px 28px;
+  min-width: 320px;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.settings-content h3 {
+  margin: 0 0 18px 0;
+  font-size: 20px;
+  color: #333;
+}
+.settings-content label {
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+.settings-content input {
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 180px;
+}
+.settings-desc {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 12px;
+}
+.settings-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.settings-actions button {
+  padding: 6px 18px;
+  font-size: 15px;
+  border: none;
+  border-radius: 5px;
+  background: #409eff;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.settings-actions button:hover {
+  background: #337bb7;
+}
+.settings-msg {
+  color: #409eff;
+  font-size: 14px;
+  margin-top: 6px;
 }
 </style>

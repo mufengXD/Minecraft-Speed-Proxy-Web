@@ -35,7 +35,7 @@ import axios from './utils/axios.js'
               localStorage.setItem('token', result.token);
             }
             
-            window.location.href = '/main-ui.html'; // 跳转到 main-ui.html
+            window.location.href = '/src/main-ui.html'; // 跳转到 main-ui.html
           } else if (result.status === 401) {
             this.loginMsg = result.message; // 登陆失败
           } else {
