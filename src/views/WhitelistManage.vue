@@ -44,7 +44,8 @@
     </div>
 
     <!-- 分页控件 -->
-    <div class="pagination" v-if="totalPages > 1">
+    <div class="pagination-container" v-if="whiteList.length > 0">
+      <div class="pagination">
       <button 
         class="page-btn" 
         @click="goToPage(1)" 
@@ -83,12 +84,13 @@
         末页
       </button>
       
-      <select class="page-size-select" v-model="pageSize" @change="changePageSize">
+      <select class="page-size-select" v-model.number="pageSize" @change="changePageSize">
         <option value="10">10条/页</option>
         <option value="20">20条/页</option>
         <option value="50">50条/页</option>
         <option value="100">100条/页</option>
       </select>
+    </div>
     </div>
 
     <!-- 添加白名单弹窗 -->
@@ -135,7 +137,9 @@ export default {
       return this.paginatedUsers.length > 0 && this.selectedUsers.length === this.paginatedUsers.length
     },
     totalPages() {
-      return Math.ceil(this.whiteList.length / this.pageSize)
+      const pages = Math.ceil(this.whiteList.length / this.pageSize)
+      console.log(`WhiteList - 总数据: ${this.whiteList.length}, 每页: ${this.pageSize}, 总页数: ${pages}`)
+      return pages
     },
     paginatedUsers() {
       const start = (this.currentPage - 1) * this.pageSize
@@ -280,6 +284,8 @@ export default {
     },
     
     changePageSize() {
+      // 确保 pageSize 是数字类型
+      this.pageSize = parseInt(this.pageSize)
       this.currentPage = 1 // 重置到第一页
       this.selectedUsers = [] // 清空选择
     }
@@ -434,6 +440,10 @@ export default {
 }
 
 /* 分页样式 */
+.pagination-container {
+  margin-top: 20px;
+}
+
 .pagination {
   display: flex;
   justify-content: center;

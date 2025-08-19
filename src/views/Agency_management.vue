@@ -38,14 +38,14 @@
                 @change="toggleSelect(proxy.id)"
               >
             </td>
-            <td>{{ proxy.player_name }}</td>
+            <td>{{ proxy.username }}</td>
             <td>
-              <span :class="['status-badge', proxy.whitelist_status ? 'status-active' : 'status-inactive']">
-                {{ proxy.whitelist_status ? '白名单玩家' : '普通玩家' }}
+              <span :class="['status-badge', isUserInWhitelist(proxy.username) ? 'status-active' : 'status-inactive']">
+                {{ isUserInWhitelist(proxy.username) ? '白名单玩家' : '普通玩家' }}
               </span>
             </td>
-            <td>{{ proxy.proxy_ip }}</td>
-            <td>{{ proxy.proxy_port }}</td>
+            <td>{{ proxy.proxy_target_addr }}</td>
+            <td>{{ proxy.proxy_target_port }}</td>
             <td>
               <button @click.stop="editProxy(proxy)" class="btn-edit">设置代理</button>
               <button @click.stop="deleteProxySingle(proxy)" class="btn-delete-single">删除代理</button>
@@ -59,7 +59,7 @@
     </div>
 
     <!-- 分页控件 -->
-    <div class="pagination-container">
+    <div class="pagination-container" v-if="proxyList.length > 0">
       <div class="pagination-info">
         共 {{ totalProxies }} 条记录，第 {{ currentPage }} / {{ totalPages }} 页
       </div>
@@ -86,7 +86,7 @@
         <div class="form-group">
           <label>玩家名：</label>
           <input 
-            v-model="proxyForm.player_name" 
+            v-model="proxyForm.username" 
             type="text" 
             :readonly="isEditing"
             placeholder="请输入玩家名"
@@ -96,7 +96,7 @@
         <div class="form-group">
           <label>代理IP：</label>
           <input 
-            v-model="proxyForm.proxy_ip" 
+            v-model="proxyForm.proxy_address" 
             type="text" 
             placeholder="请输入代理IP"
             @keyup.enter="submitProxy"
@@ -126,7 +126,7 @@
         <div class="form-group">
           <label>代理IP：</label>
           <input 
-            v-model="batchForm.proxy_ip" 
+            v-model="batchForm.proxy_address" 
             type="text" 
             placeholder="请输入代理IP"
             @keyup.enter="submitBatchProxy"
@@ -168,14 +168,15 @@ export default {
       selectedProxies: [], // 选中的代理ID列表
       currentPage: 1,
       pageSize: 10,
+      whitelist: [], // 新增白名单数组
       
       // 添加/编辑代理弹窗
       showProxyDialog: false,
       isEditing: false,
       proxyForm: {
         id: null,
-        player_name: '',
-        proxy_ip: '',
+        username: '',
+        proxy_address: '',
         proxy_port: ''
       },
       proxyMsg: '',
@@ -183,7 +184,7 @@ export default {
       // 批量设置代理弹窗
       showBatchDialog: false,
       batchForm: {
-        proxy_ip: '',
+        proxy_address: '',
         proxy_port: ''
       },
       batchMsg: ''
@@ -217,107 +218,139 @@ export default {
   },
   async mounted() {
     await this.fetchProxyList();
+    await this.fetchWhitelist(); // 挂载时获取白名单
   },
   methods: {
     // 获取代理列表（预留接口）
     async fetchProxyList() {
       try {
-        // const response = await axios.get('/api/get_proxy_list');
-        // if (response.data.status === 200) {
-        //   this.proxyList = response.data.proxy_list;
-        //   logManager.success('获取代理列表成功');
-        // }
-        
-        // 模拟数据
-        this.proxyList = [
-          { id: 1, player_name: 'Player_name', whitelist_status: true, proxy_ip: '127.0.0.1', proxy_port: 25565 },
-          { id: 2, player_name: 'Player_name', whitelist_status: true, proxy_ip: '127.0.0.1', proxy_port: 25565 },
-          { id: 3, player_name: 'Player_name', whitelist_status: true, proxy_ip: '127.0.0.1', proxy_port: 25565 },
-          { id: 4, player_name: 'Player_name', whitelist_status: false, proxy_ip: '127.0.0.1', proxy_port: 25565 },
-          { id: 5, player_name: 'Player_name', whitelist_status: false, proxy_ip: '127.0.0.1', proxy_port: 25565 },
-          { id: 6, player_name: 'Player_name', whitelist_status: false, proxy_ip: '127.0.0.1', proxy_port: 25565 }
-        ];
-        console.log('获取代理列表成功');
+        const response = await axios.get('/api/get_user_proxies');
+        if (response.data && response.data.status === 200 && Array.isArray(response.data.user_proxies)) {
+          // 将user_proxies数组映射为代理列表
+          this.proxyList = response.data.user_proxies.map((item, idx) => ({
+            id: idx + 1, // 可用idx做唯一id，实际应用可用后端id
+            username: item.username,
+            proxy_target_addr: item.proxy_target_addr,
+            proxy_target_port: item.proxy_target_port
+          }));
+          logManager.success('获取代理列表成功');
+        } else {
+          this.proxyList = [];
+          logManager.error('代理数据异常');
+        }
       } catch (error) {
-        console.error('获取代理列表失败:', error);
+        this.proxyList = [];
         logManager.error('获取代理列表失败');
       }
     },
     
-    // 添加代理（预留接口）
+    async fetchWhitelist() {
+      try {
+        const response = await axios.get('/api/get_whitelist');
+        if (response.data.status === 200) {
+          this.whitelist = response.data.white_list || [];
+        } else {
+          this.whitelist = [];
+        }
+      } catch (error) {
+        this.whitelist = [];
+      }
+    },
+    
+    isUserInWhitelist(username) {
+      return this.whitelist.includes(username);
+    },
+    
+    // 添加代理
     async addProxy(proxyData) {
       try {
-        // const response = await axios.post('/api/add_proxy', proxyData);
-        // if (response.data.status === 200) {
-        //   await this.fetchProxyList();
-        //   logManager.success('添加代理成功');
-        //   return true;
-        // }
-        
-        // 模拟添加
-        const newProxy = {
-          id: Date.now(),
-          player_name: proxyData.player_name,
-          whitelist_status: false,
-          proxy_ip: proxyData.proxy_ip,
-          proxy_port: proxyData.proxy_port
-        };
-        this.proxyList.push(newProxy);
-        logManager.success('添加代理成功');
-        return true;
+        const response = await axios.post('/api/set_user_proxy', {
+          username: proxyData.username,
+          proxy_address: proxyData.proxy_address,
+          proxy_port: parseInt(proxyData.proxy_port) // 确保是数字类型
+        });
+        if (response.data && response.data.status === 200) {
+          await this.fetchProxyList();
+          logManager.success('添加代理成功');
+          return true;
+        } else {
+          logManager.error(`添加代理失败：${response.data?.message || '未知错误'}`);
+          return false;
+        }
       } catch (error) {
         console.error('添加代理失败:', error);
-        logManager.error('添加代理失败');
+        logManager.error(`添加代理失败：${error.response?.data?.message || error.message}`);
         return false;
       }
     },
     
-    // 设置代理（预留接口）
+    // 设置代理
     async setProxy(proxyData) {
       try {
-        // const response = await axios.post('/api/set_proxy', proxyData);
-        // if (response.data.status === 200) {
-        //   await this.fetchProxyList();
-        //   logManager.success('设置代理成功');
-        //   return true;
-        // }
-        
-        // 模拟设置
-        const index = this.proxyList.findIndex(p => p.id === proxyData.id);
-        if (index !== -1) {
-          this.proxyList[index] = { ...this.proxyList[index], ...proxyData };
+        const response = await axios.post('/api/set_user_proxy', {
+          username: proxyData.username,
+          proxy_address: proxyData.proxy_address,
+          proxy_port: parseInt(proxyData.proxy_port) // 确保是数字类型
+        });
+        if (response.data && response.data.status === 200) {
+          await this.fetchProxyList();
+          logManager.success('设置代理成功');
+          return true;
+        } else {
+          logManager.error(`设置代理失败：${response.data?.message || '未知错误'}`);
+          return false;
         }
-        logManager.success('设置代理成功');
-        return true;
       } catch (error) {
         console.error('设置代理失败:', error);
-        logManager.error('设置代理失败');
+        logManager.error(`设置代理失败：${error.response?.data?.message || error.message}`);
         return false;
       }
     },
     
-    // 批量设置代理（预留接口）
+    // 批量设置代理（循环调用单个设置接口）
     async batchSetProxy(proxyData, playerIds) {
       try {
-        // const response = await axios.post('/api/batch_set_proxy', {
-        //   ...proxyData,
-        //   player_ids: playerIds
-        // });
-        // if (response.data.status === 200) {
-        //   await this.fetchProxyList();
-        //   logManager.success(`批量设置代理成功，共${playerIds.length}个玩家`);
-        //   return true;
-        // }
+        logManager.info(`开始批量设置代理，共${playerIds.length}个玩家...`);
+        let successCount = 0;
+        let failCount = 0;
         
-        // 模拟批量设置
-        this.proxyList.forEach(proxy => {
-          if (playerIds.includes(proxy.id)) {
-            proxy.proxy_ip = proxyData.proxy_ip;
-            proxy.proxy_port = proxyData.proxy_port;
+        // 循环调用单个设置代理接口
+        for (const playerId of playerIds) {
+          const proxy = this.proxyList.find(p => p.id === playerId);
+          if (!proxy) {
+            failCount++;
+            continue;
+          }            try {
+            const response = await axios.post('/api/set_user_proxy', {
+              username: proxy.username,
+              proxy_address: proxyData.proxy_address,
+              proxy_port: parseInt(proxyData.proxy_port) // 确保是数字类型
+            });
+            
+            if (response.data && response.data.status === 200) {
+              successCount++;
+            } else {
+              failCount++;
+            }
+          } catch (error) {
+            console.error(`设置代理失败 (${proxy.username}):`, error);
+            failCount++;
           }
-        });
-        logManager.success(`批量设置代理成功，共${playerIds.length}个玩家`);
-        return true;
+        }
+        
+        // 刷新列表
+        await this.fetchProxyList();
+        
+        // 显示结果
+        if (failCount === 0) {
+          logManager.success(`批量设置代理成功，共${successCount}个玩家`);
+        } else if (successCount === 0) {
+          logManager.error(`批量设置代理失败，${failCount}个玩家操作失败`);
+        } else {
+          logManager.warning(`批量设置代理完成：成功${successCount}个，失败${failCount}个`);
+        }
+        
+        return successCount > 0;
       } catch (error) {
         console.error('批量设置代理失败:', error);
         logManager.error('批量设置代理失败');
@@ -325,20 +358,50 @@ export default {
       }
     },
     
-    // 删除代理（预留接口）
+    // 删除代理
     async deleteProxy(playerIds) {
       try {
-        // const response = await axios.post('/api/delete_proxy', { player_ids: playerIds });
-        // if (response.data.status === 200) {
-        //   await this.fetchProxyList();
-        //   logManager.success(`删除代理成功，共${playerIds.length}个玩家`);
-        //   return true;
-        // }
+        logManager.info(`开始删除代理，共${playerIds.length}个玩家...`);
+        let successCount = 0;
+        let failCount = 0;
         
-        // 模拟删除
-        this.proxyList = this.proxyList.filter(proxy => !playerIds.includes(proxy.id));
-        logManager.success(`删除代理成功，共${playerIds.length}个玩家`);
-        return true;
+        // 循环调用删除接口
+        for (const playerId of playerIds) {
+          const proxy = this.proxyList.find(p => p.id === playerId);
+          if (!proxy) {
+            failCount++;
+            continue;
+          }
+          
+          try {
+            const response = await axios.post('/api/remove_user_proxy', {
+              username: proxy.username
+            });
+            
+            if (response.data && response.data.status === 200) {
+              successCount++;
+            } else {
+              failCount++;
+            }
+          } catch (error) {
+            console.error(`删除代理失败 (${proxy.username}):`, error);
+            failCount++;
+          }
+        }
+        
+        // 刷新列表
+        await this.fetchProxyList();
+        
+        // 显示结果
+        if (failCount === 0) {
+          logManager.success(`删除代理成功，共${successCount}个玩家`);
+        } else if (successCount === 0) {
+          logManager.error(`删除代理失败，${failCount}个玩家操作失败`);
+        } else {
+          logManager.warning(`删除代理完成：成功${successCount}个，失败${failCount}个`);
+        }
+        
+        return successCount > 0;
       } catch (error) {
         console.error('删除代理失败:', error);
         logManager.error('删除代理失败');
@@ -392,9 +455,9 @@ export default {
       this.isEditing = false;
       this.proxyForm = {
         id: null,
-        player_name: '',
-        proxy_ip: '',
-        proxy_port: ''
+        username: '',
+        proxy_address: 'hypixel.net',
+        proxy_port: 25565
       };
       this.proxyMsg = '';
       this.showProxyDialog = true;
@@ -404,9 +467,9 @@ export default {
       this.isEditing = true;
       this.proxyForm = {
         id: proxy.id,
-        player_name: proxy.player_name,
-        proxy_ip: proxy.proxy_ip,
-        proxy_port: proxy.proxy_port
+        username: proxy.username,
+        proxy_address: proxy.proxy_target_addr,
+        proxy_port: proxy.proxy_target_port
       };
       this.proxyMsg = '';
       this.showProxyDialog = true;
@@ -417,7 +480,7 @@ export default {
     },
     
     async submitProxy() {
-      if (!this.proxyForm.player_name || !this.proxyForm.proxy_ip || !this.proxyForm.proxy_port) {
+      if (!this.proxyForm.username || !this.proxyForm.proxy_address || !this.proxyForm.proxy_port) {
         this.proxyMsg = '请填写完整信息';
         return;
       }
@@ -437,7 +500,7 @@ export default {
     // 批量操作相关方法
     batchSetProxyDialog() {
       this.batchForm = {
-        proxy_ip: '',
+        proxy_address: '',
         proxy_port: ''
       };
       this.batchMsg = '';
@@ -449,7 +512,7 @@ export default {
     },
     
     async submitBatchProxy() {
-      if (!this.batchForm.proxy_ip || !this.batchForm.proxy_port) {
+      if (!this.batchForm.proxy_address || !this.batchForm.proxy_port) {
         this.batchMsg = '请填写完整信息';
         return;
       }
@@ -474,7 +537,7 @@ export default {
     
     // 删除单个代理
     async deleteProxySingle(proxy) {
-      if (confirm(`确定要删除玩家 "${proxy.player_name}" 的代理设置吗？`)) {
+      if (confirm(`确定要删除玩家 "${proxy.username}" 的代理设置吗？`)) {
         const success = await this.deleteProxy([proxy.id]);
         if (success) {
           // 如果删除的是当前选中的项，从选中列表中移除

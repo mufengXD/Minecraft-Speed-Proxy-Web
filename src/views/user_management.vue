@@ -6,7 +6,7 @@
       <div class="header-right">
         <div class="whitelist-status" :class="{ 'status-enabled': whitelistStatus, 'status-disabled': !whitelistStatus }" @click="toggleWhitelistStatus">
           <span>白名单状态：{{ whitelistStatus ? '开启' : '关闭' }}</span>
-          <i class="status-icon">{{ whitelistStatus ? '●' : '○' }}</i>
+          <!-- <i class="status-icon">{{ whitelistStatus ? '●' : '○' }}</i> -->
         </div>
         <div class="actions">
           <button class="action-btn blacklist-btn" @click="handleBlacklistManage">黑名单管理</button>
@@ -52,7 +52,7 @@
     </div>
 
     <!-- 分页控件 -->
-    <div class="pagination-container" v-if="totalPages > 1">
+    <div class="pagination-container" v-if="onlineUsers.length > 0">
       <div class="pagination-info">
         共 {{ totalUsers }} 条记录，第 {{ currentPage }} / {{ totalPages }} 页
       </div>
