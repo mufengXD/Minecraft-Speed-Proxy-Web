@@ -7,10 +7,11 @@
     </div>
     <div class="grid-item">
       <h3 style="text-align:center;">累计在线时长前十/分钟</h3>
-      <div v-if="onlineUsers.length === 0" class="no-data">
-        暂无在线玩家数据
+      <div ref="barChart" style="width: 100%; height: 100%; position: relative;">
+        <div v-if="onlineUsers.length === 0" class="no-data" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10;">
+          暂无在线玩家数据
+        </div>
       </div>
-      <div v-else ref="barChart" style="width: 100%; height: 100%;"></div>
     </div>
     <div class="grid-item">
       <h3 style="text-align:center;">历史玩家数量</h3>
@@ -93,8 +94,10 @@ export default {
     // 获取折线图数据
     await this.fetchLineChartData();
     
-    // 初始化图表
-    this.initCharts();
+    // 等待DOM渲染完成后初始化图表
+    this.$nextTick(() => {
+      this.initCharts();
+    });
     
     // 设置定时刷新（每15秒刷新一次）
     this.refreshTimer = setInterval(async () => {
@@ -209,7 +212,12 @@ export default {
         
         if (response.data && response.data.status === 200) {
           this.lineChartData = response.data.user_numbers || [];
-          console.log('获取折线图数据成功:', response.data);
+          console.log('获取折线图数据成功:', {
+            timeRange: this.currentTimeRange,
+            granularity: timeRange.granularity,
+            dataLength: this.lineChartData.length,
+            data: this.lineChartData
+          });
         } else {
           console.error('获取折线图数据失败:', response.data?.message);
           this.lineChartData = [];
@@ -294,6 +302,12 @@ export default {
     },
     
     initCharts() {
+      // 检查DOM元素是否存在
+      if (!this.$refs.barChart || !this.$refs.lineChart) {
+        console.error('图表DOM元素不存在，无法初始化');
+        return;
+      }
+      
       // 处理在线时长数据，取前十名
       const onlineTimeData = this.onlineUsers
         .map(user => ({
@@ -356,10 +370,15 @@ export default {
         ]
       });
 
-      // 初始化折线图
+      // 初始化折线图（无论是否有数据都要初始化）
       const timeRange = this.timeRangeOptions.find(option => option.key === this.currentTimeRange);
       const dates = this.lineChartData.map(item => this.formatTimestamp(item.timestamp, timeRange.granularity));
       const playerData = this.lineChartData.map(item => item.online_users);
+      
+      // 如果没有数据，显示空图表
+      if (this.lineChartData.length === 0) {
+        console.log('折线图数据为空，显示空图表');
+      }
       
       const lineChart = echarts.init(this.$refs.lineChart);
       lineChart.setOption({
@@ -446,6 +465,8 @@ export default {
       const dates = this.lineChartData.map(item => this.formatTimestamp(item.timestamp, timeRange.granularity));
       const playerData = this.lineChartData.map(item => item.online_users);
       
+      console.log('更新折线图，数据长度:', this.lineChartData.length, '日期:', dates, '数据:', playerData);
+      
       const lineChart = echarts.getInstanceByDom(this.$refs.lineChart);
       if (lineChart) {
         lineChart.setOption({
@@ -456,7 +477,73 @@ export default {
             data: playerData
           }]
         });
+      } else {
+        console.error('折线图实例不存在，重新初始化');
+        // 如果图表实例不存在，重新初始化
+        this.initLineChart();
       }
+    },
+    
+    initLineChart() {
+      // 检查DOM元素是否存在
+      if (!this.$refs.lineChart) {
+        console.error('折线图DOM元素不存在，无法初始化');
+        return;
+      }
+      
+      const timeRange = this.timeRangeOptions.find(option => option.key === this.currentTimeRange);
+      const dates = this.lineChartData.map(item => this.formatTimestamp(item.timestamp, timeRange.granularity));
+      const playerData = this.lineChartData.map(item => item.online_users);
+      
+      console.log('重新初始化折线图，数据长度:', this.lineChartData.length);
+      
+      const lineChart = echarts.init(this.$refs.lineChart);
+      lineChart.setOption({
+        tooltip: {
+          trigger: 'axis',
+          formatter: function(params) {
+            if (params && params.length > 0) {
+              return `${params[0].name}<br/>在线玩家: ${params[0].value}人`;
+            }
+            return '';
+          }
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '3%',
+          containLabel: true
+        },
+        xAxis: {
+          type: 'category',
+          data: dates,
+          name: '',
+          nameLocation: 'middle',
+          nameGap: 25
+        },
+        yAxis: {
+          type: 'value',
+          name: '',
+          nameLocation: 'middle',
+          nameGap: 40
+        },
+        series: [
+          {
+            type: 'line',
+            data: playerData,
+            itemStyle: {
+              color: '#67c23a'
+            },
+            lineStyle: {
+              color: '#67c23a',
+              width: 2
+            },
+            symbol: 'circle',
+            symbolSize: 6,
+            smooth: true
+          }
+        ]
+      });
     },
     
     async refreshData() {

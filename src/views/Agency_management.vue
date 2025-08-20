@@ -168,7 +168,7 @@ export default {
       selectedProxies: [], // 选中的代理ID列表
       currentPage: 1,
       pageSize: 10,
-      whitelist: [], // 新增白名单数组
+      whitelist: [],
       
       // 添加/编辑代理弹窗
       showProxyDialog: false,
@@ -221,7 +221,6 @@ export default {
     await this.fetchWhitelist(); // 挂载时获取白名单
   },
   methods: {
-    // 获取代理列表（预留接口）
     async fetchProxyList() {
       try {
         const response = await axios.get('/api/get_user_proxies');
@@ -267,7 +266,7 @@ export default {
         const response = await axios.post('/api/set_user_proxy', {
           username: proxyData.username,
           proxy_address: proxyData.proxy_address,
-          proxy_port: parseInt(proxyData.proxy_port) // 确保是数字类型
+          proxy_port: parseInt(proxyData.proxy_port)
         });
         if (response.data && response.data.status === 200) {
           await this.fetchProxyList();
@@ -290,7 +289,7 @@ export default {
         const response = await axios.post('/api/set_user_proxy', {
           username: proxyData.username,
           proxy_address: proxyData.proxy_address,
-          proxy_port: parseInt(proxyData.proxy_port) // 确保是数字类型
+          proxy_port: parseInt(proxyData.proxy_port)
         });
         if (response.data && response.data.status === 200) {
           await this.fetchProxyList();
@@ -324,7 +323,7 @@ export default {
             const response = await axios.post('/api/set_user_proxy', {
               username: proxy.username,
               proxy_address: proxyData.proxy_address,
-              proxy_port: parseInt(proxyData.proxy_port) // 确保是数字类型
+              proxy_port: parseInt(proxyData.proxy_port)
             });
             
             if (response.data && response.data.status === 200) {

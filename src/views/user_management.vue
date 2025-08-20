@@ -220,6 +220,7 @@ export default {
         if (response.data && response.data.status === 200) {
           await this.fetchOnlineUsers();
           logManager.success(`成功踢出玩家 ${user.username}`);
+          window.location.reload(); // 刷新页面
         } else {
           logManager.error(`踢出失败：${response.data?.message || '未知错误'}`);
         }
