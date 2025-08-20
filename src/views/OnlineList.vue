@@ -14,7 +14,17 @@
     </div>
     <div class="grid-item">
       <h3 style="text-align:center;">历史玩家数量</h3>
-      <div ref="lineChart" style="width: 100%; height: 100%;"></div>
+      <div class="chart-controls">
+        <button 
+          v-for="option in timeRangeOptions" 
+          :key="option.key"
+          @click="changeTimeRange(option.key)"
+          :class="['time-btn', { 'active': currentTimeRange === option.key }]"
+        >
+          {{ option.label }}
+        </button>
+      </div>
+      <div ref="lineChart" style="width: 100%; height: calc(100% - 60px);"></div>
     </div>
     <div class="grid-item">
       <h3 style="text-align:center;">后端日志</h3>
@@ -59,7 +69,15 @@ export default {
       onlineUsers: [],
       systemStartTime: "获取中...",
       logs: [],
-      refreshTimer: null
+      refreshTimer: null,
+      currentTimeRange: 'hour', // 当前选择的时间范围
+      timeRangeOptions: [
+        { key: 'hour', label: '近一小时', granularity: 'minute' },
+        { key: 'day', label: '近一天', granularity: 'hour' },
+        { key: 'week', label: '近一周', granularity: 'day' },
+        { key: 'month', label: '近一月', granularity: 'day' }
+      ],
+      lineChartData: [] // 折线图数据
     }
   },
   async mounted() {
@@ -72,6 +90,9 @@ export default {
     // 获取后端日志
     await this.fetchLogs();
     
+    // 获取折线图数据
+    await this.fetchLineChartData();
+    
     // 初始化图表
     this.initCharts();
     
@@ -80,6 +101,7 @@ export default {
       await this.fetchOnlineUsers();
       await this.fetchSystemInfo();
       await this.fetchLogs();
+      await this.fetchLineChartData();
       this.updateCharts();
     }, 15000);
   },
@@ -147,6 +169,83 @@ export default {
       } catch (error) {
         console.error('获取后端日志失败:', error);
         this.logs = [];
+      }
+    },
+    
+    async fetchLineChartData() {
+      try {
+        const timeRange = this.timeRangeOptions.find(option => option.key === this.currentTimeRange);
+        const now = Math.floor(Date.now() / 1000);
+        let startTime, endTime;
+        
+        // 根据选择的时间范围计算起始和结束时间
+        switch (this.currentTimeRange) {
+          case 'hour':
+            startTime = now - 3600; // 1小时前
+            endTime = now;
+            break;
+          case 'day':
+            startTime = now - 24 * 3600; // 1天前
+            endTime = now;
+            break;
+          case 'week':
+            startTime = now - 7 * 24 * 3600; // 1周前
+            endTime = now;
+            break;
+          case 'month':
+            startTime = now - 30 * 24 * 3600; // 1个月前（按30天计算）
+            endTime = now;
+            break;
+          default:
+            startTime = now - 3600;
+            endTime = now;
+        }
+        
+        const response = await axios.post('/api/get_online_number_list', {
+          start_time: startTime,
+          end_time: endTime,
+          granularity: timeRange.granularity
+        });
+        
+        if (response.data && response.data.status === 200) {
+          this.lineChartData = response.data.user_numbers || [];
+          console.log('获取折线图数据成功:', response.data);
+        } else {
+          console.error('获取折线图数据失败:', response.data?.message);
+          this.lineChartData = [];
+        }
+      } catch (error) {
+        console.error('获取折线图数据失败:', error);
+        this.lineChartData = [];
+      }
+    },
+    
+    formatTimestamp(timestamp, granularity) {
+      const date = new Date(timestamp * 1000);
+      
+      switch (granularity) {
+        case 'minute':
+          return `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+        case 'hour':
+          return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:00`;
+        case 'day':
+          return `${date.getMonth() + 1}/${date.getDate()}`;
+        case 'week':
+          const weekStart = new Date(date);
+          weekStart.setDate(date.getDate() - date.getDay());
+          return `${weekStart.getMonth() + 1}/${weekStart.getDate()}`;
+        case 'month':
+          return `${date.getFullYear()}/${date.getMonth() + 1}`;
+        default:
+          return `${date.getMonth() + 1}/${date.getDate()}`;
+      }
+    },
+    
+    async changeTimeRange(timeRange) {
+      if (this.currentTimeRange !== timeRange) {
+        this.currentTimeRange = timeRange;
+        await this.fetchLineChartData();
+        this.updateLineChart();
       }
     },
     
@@ -257,17 +356,21 @@ export default {
         ]
       });
 
-      // 初始化折线图（保持原有的测试数据）
-      const allDates = ['1月1日', '1月2日', '1月3日', '1月4日', '1月5日', '1月6日', '1月7日'];
-      const allPlayerData = [20, 32, 50, 34, 60, 30, 20];
-      
-      const dates = allDates.slice(0, 7);
-      const playerData = allPlayerData.slice(0, 7);
+      // 初始化折线图
+      const timeRange = this.timeRangeOptions.find(option => option.key === this.currentTimeRange);
+      const dates = this.lineChartData.map(item => this.formatTimestamp(item.timestamp, timeRange.granularity));
+      const playerData = this.lineChartData.map(item => item.online_users);
       
       const lineChart = echarts.init(this.$refs.lineChart);
       lineChart.setOption({
         tooltip: {
-          trigger: 'axis'
+          trigger: 'axis',
+          formatter: function(params) {
+            if (params && params.length > 0) {
+              return `${params[0].name}<br/>在线玩家: ${params[0].value}人`;
+            }
+            return '';
+          }
         },
         grid: {
           left: '3%',
@@ -278,13 +381,13 @@ export default {
         xAxis: {
           type: 'category',
           data: dates,
-          name: '日期',
+          name: '',
           nameLocation: 'middle',
           nameGap: 25
         },
         yAxis: {
           type: 'value',
-          name: '玩家数量',
+          name: '',
           nameLocation: 'middle',
           nameGap: 40
         },
@@ -333,12 +436,34 @@ export default {
           }]
         });
       }
+      
+      // 更新折线图
+      this.updateLineChart();
+    },
+    
+    updateLineChart() {
+      const timeRange = this.timeRangeOptions.find(option => option.key === this.currentTimeRange);
+      const dates = this.lineChartData.map(item => this.formatTimestamp(item.timestamp, timeRange.granularity));
+      const playerData = this.lineChartData.map(item => item.online_users);
+      
+      const lineChart = echarts.getInstanceByDom(this.$refs.lineChart);
+      if (lineChart) {
+        lineChart.setOption({
+          xAxis: {
+            data: dates
+          },
+          series: [{
+            data: playerData
+          }]
+        });
+      }
     },
     
     async refreshData() {
       await this.fetchOnlineUsers();
       await this.fetchSystemInfo();
       await this.fetchLogs();
+      await this.fetchLineChartData();
       this.updateCharts();
     }
   }
@@ -458,5 +583,35 @@ p {
 
 .refresh-btn:hover {
   background-color: #66b1ff;
+}
+
+.chart-controls {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 0 10px;
+}
+
+.time-btn {
+  padding: 6px 12px;
+  border: 1px solid #dcdfe6;
+  background: white;
+  color: #606266;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.3s;
+}
+
+.time-btn:hover {
+  color: #409eff;
+  border-color: #c6e2ff;
+}
+
+.time-btn.active {
+  background-color: #409eff;
+  color: white;
+  border-color: #409eff;
 }
 </style>

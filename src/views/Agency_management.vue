@@ -456,7 +456,7 @@ export default {
       this.proxyForm = {
         id: null,
         username: '',
-        proxy_address: 'hypixel.net',
+        proxy_address: 'mc.hypixel.net',
         proxy_port: 25565
       };
       this.proxyMsg = '';
