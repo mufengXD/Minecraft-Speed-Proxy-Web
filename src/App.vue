@@ -101,11 +101,11 @@ import axios from './utils/axios.js'
       },
       messageType() {
         if (!this.loginMsg) return '';
-        return this.loginSuccess ? 'success' : 'error'; // 使用明确的状态判断
+        return this.loginSuccess ? 'success' : 'error';
       },
       messageIcon() {
         if (!this.loginMsg) return '';
-        return this.loginSuccess ? '✅' : '❌'; // 使用明确的状态判断
+        return this.loginSuccess ? '✅' : '❌';
       }
     },
     methods: {
