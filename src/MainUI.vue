@@ -1,14 +1,32 @@
 <template>
   <div class="main-ui">
     <aside class="sidebar">
-      <div
-        v-for="item in menu"
-        :key="item.path"
-        :class="['sidebar-item', $route.path === item.path ? 'active' : '']"
-        @click="go(item.path)"
-      >
-        {{ item.name }}
+      <div class="sidebar-header">
+        <div class="logo">
+          <span class="logo-text">管理面板</span>
+        </div>
       </div>
+      <nav class="sidebar-nav">
+        <div
+          v-for="item in menu"
+          :key="item.path"
+          :class="['sidebar-item', $route.path === item.path ? 'active' : '']"
+          @click="go(item.path)"
+        >
+          <div class="item-icon">
+            <svg v-if="item.path === '/online'" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+            </svg>
+            <svg v-else-if="item.path === '/user_management'" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            </svg>
+            <svg v-else-if="item.path === '/Agency_management'" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-.61.08-1.21.21-1.78L9.99 16v1c0 1.1.9 2 2 2v1.93C7.06 20.48 4 16.69 4 12zm14.89 2.41c-.26-.81-1-1.41-1.89-1.41h-1v-3c0-.55-.45-1-1-1h-6v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41C17.92 5.77 20 8.65 20 12c0 .83-.13 1.64-.36 2.41z"/>
+            </svg>
+          </div>
+          <span class="item-text">{{ item.name }}</span>
+        </div>
+      </nav>
     </aside>
     <div class="main-content">
       <header class="top-banner">
@@ -157,25 +175,102 @@ export default {
   margin: 0; 
   padding: 0; 
 }
+
+/* 侧边栏样式 */
 .sidebar { 
-  width: 120px;     /*侧边栏宽度*/
-  background: #586360; 
+  width: 240px;
+  background: linear-gradient(180deg, #f1f3f4 0%, #e8eaed 100%);
+  border-right: 1px solid #dadce0;
   margin: 0; 
   padding: 0; 
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
 }
+
+.sidebar-header {
+  padding: 24px 20px;
+  border-bottom: 1px solid #dadce0;
+  background: #f8f9fa;
+  height: 72px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #409eff;
+}
+
+.logo svg {
+  fill: currentColor;
+}
+
+.logo-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 16px 0;
+}
+
 .sidebar-item { 
-  padding: 20px; 
-  cursor: pointer; 
-  margin: 0; 
-  color: #fff;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  margin: 4px 12px;
+  cursor: pointer;
+  border-radius: 8px;
+  color: #495057;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  position: relative;
 }
-.sidebar-item.active { 
-  background: #3c6792; 
-  color: #c2c2b3; 
-}
+
 .sidebar-item:hover {
-  background: #4a7178;
+  background: rgba(64, 158, 255, 0.1);
+  color: #409eff;
+  transform: translateX(2px);
+}
+
+.sidebar-item.active { 
+  background: linear-gradient(135deg, #409eff, #337bb7);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+}
+
+.sidebar-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 20px;
+  background: #fff;
+  border-radius: 0 2px 2px 0;
+}
+
+.item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+.item-icon svg {
+  fill: currentColor;
+}
+
+.item-text {
+  flex: 1;
 }
 .main-content {
   flex: 1;
@@ -184,13 +279,13 @@ export default {
 }
 .top-banner {
   height: 60px;
-  background: #f8f8f8;
+  background: #ffffff;
   border-bottom: 1px solid #e0e0e0;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 24px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 .banner-left h2 {
   margin: 0;
@@ -225,6 +320,7 @@ export default {
   flex: 1; 
   padding: 24px; 
   overflow: auto;
+  /* background-image: linear-gradient(to top, lightgrey 0%, lightgrey 1%, #e0e0e0 26%, #efefef 48%, #d9d9d9 75%, #bcbcbc 100%); */
 }
 .settings-modal {
   position: fixed;

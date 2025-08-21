@@ -262,7 +262,7 @@ export default {
       
       try {
         // 将后端时间戳转换为本地时间显示
-        const date = new Date(timestamp * 1000); // 假设后端返回秒级时间戳
+        const date = new Date(timestamp * 1000);
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
@@ -574,8 +574,11 @@ export default {
   justify-content: center;
   align-items: center;
   border-radius: 12px;
-  background: rgb(248, 248, 248);
-  box-shadow: 0px 0px 10px 2px rgba(49, 49, 49, 0.1);
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
 }
 .grid-item:nth-child(1) {
   width: 400px;
@@ -597,9 +600,10 @@ export default {
 p {
   font-family: '微软雅黑', Arial, sans-serif;
   font-size: 18px;
-  color: #333;
+  color: #2c3e50;
   font-weight: bold;
   margin: 16px 0;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .no-data {
