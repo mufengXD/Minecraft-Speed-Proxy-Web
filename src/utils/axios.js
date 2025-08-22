@@ -27,11 +27,27 @@ axiosInstance.interceptors.request.use(
 // 响应拦截器：统一处理 401 响应
 axiosInstance.interceptors.response.use(
   response => {
+    // 检查响应体中是否包含401状态
+    if (response.data && response.data.status === 401) {
+      // 清除本地 token
+      localStorage.removeItem('token');
+      
+      // 提示用户并跳转到登录页
+      alert('登录已过期，请重新登录');
+      
+      // 使用多种方式确保跳转成功
+      setTimeout(() => {
+        window.location.replace('/');
+      }, 100);
+      
+      return Promise.reject(new Error('Unauthorized'));
+    }
+    
     // 请求成功，直接返回响应
     return response;
   },
   error => {
-    // 检查是否是 401 未授权错误
+    // 检查是否是 401 未授权错误（HTTP状态码）
     if (error.response && error.response.status === 401) {
       // 清除本地 token
       localStorage.removeItem('token');
