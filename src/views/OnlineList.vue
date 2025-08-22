@@ -27,7 +27,7 @@
       </div>
       <div ref="lineChart" style="width: 100%; height: calc(100% - 60px);"></div>
     </div>
-    <div class="grid-item">
+    <div class="grid-item" @click="openLogModal" title="点击进入详情页面">
       <h3 style="text-align:center;">后端日志</h3>
       <div class="log-container">
         <div v-if="logs.length === 0" class="no-data">
@@ -46,6 +46,65 @@
       </div>
       <div class="refresh-info">
         <p style="font-size: 14px; color: #666;">数据每15秒自动刷新</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 日志弹窗 -->
+  <div v-if="showLogModal" class="modal-overlay" @click="closeLogModal">
+    <div class="modal-content" @click.stop>
+      <div class="modal-header">
+        <h3>后端日志</h3>
+        <button class="close-btn" @click="closeLogModal">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="log-controls">
+          <div class="search-box">
+            <input 
+              v-model="logSearchKeyword" 
+              placeholder="搜索关键字..." 
+              class="search-input"
+              @input="filterLogs"
+            />
+          </div>
+          
+          <div class="date-filter">
+            <label>开始时间:</label>
+            <input 
+              type="date" 
+              v-model="logStartDate" 
+              @change="filterLogs"
+              class="date-input"
+            />
+            
+            <label>结束时间:</label>
+            <input 
+              type="date" 
+              v-model="logEndDate" 
+              @change="filterLogs"
+              class="date-input"
+            />
+            
+            <button @click="clearFilters" class="clear-btn">清空筛选</button>
+          </div>
+        </div>
+        
+        <div class="log-list-container">
+          <div v-if="filteredLogs.length === 0" class="no-data">
+            暂无匹配的日志数据
+          </div>
+          <div v-else class="log-list-modal">
+            <div 
+              v-for="(log, index) in filteredLogs" 
+              :key="index" 
+              class="log-item"
+            >
+              <span class="log-time">{{ formatLogTime(log.timestamp) }}</span>
+              <span class="log-message">{{ log.message }}</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -78,9 +137,17 @@ export default {
         { key: 'week', label: '近一周', granularity: 'day' },
         { key: 'month', label: '近一月', granularity: 'day' }
       ],
-      lineChartData: [] // 折线图数据
+      lineChartData: [], // 折线图数据
+      
+      // 日志弹窗相关数据
+      showLogModal: false,
+      logSearchKeyword: '',
+      logStartDate: '',
+      logEndDate: '',
+      filteredLogs: []
     }
   },
+  
   async mounted() {
     // 获取在线用户数据
     await this.fetchOnlineUsers();
@@ -552,6 +619,75 @@ export default {
       await this.fetchLogs();
       await this.fetchLineChartData();
       this.updateCharts();
+    },
+    
+    // 打开日志弹窗
+    openLogModal() {
+      this.showLogModal = true;
+      this.filteredLogs = [...this.logs];
+      this.initializeDateFilters();
+    },
+    
+    // 关闭日志弹窗
+    closeLogModal() {
+      this.showLogModal = false;
+      this.logSearchKeyword = '';
+      this.logStartDate = '';
+      this.logEndDate = '';
+      this.filteredLogs = [];
+    },
+    
+    // 初始化日期筛选器
+    initializeDateFilters() {
+      if (this.logs.length > 0) {
+        // 设置默认日期范围为所有日志的时间范围
+        const timestamps = this.logs.map(log => log.timestamp);
+        const minTimestamp = Math.min(...timestamps);
+        const maxTimestamp = Math.max(...timestamps);
+        
+        this.logStartDate = this.formatDateForInput(minTimestamp);
+        this.logEndDate = this.formatDateForInput(maxTimestamp);
+        this.filterLogs();
+      }
+    },
+    
+    // 格式化日期用于input元素
+    formatDateForInput(timestamp) {
+      const date = new Date(timestamp * 1000);
+      return date.toISOString().split('T')[0];
+    },
+    
+    // 筛选日志
+    filterLogs() {
+      let result = [...this.logs];
+      
+      // 关键字筛选
+      if (this.logSearchKeyword) {
+        const keyword = this.logSearchKeyword.toLowerCase();
+        result = result.filter(log => 
+          log.message.toLowerCase().includes(keyword)
+        );
+      }
+      
+      // 日期筛选
+      if (this.logStartDate || this.logEndDate) {
+        const startDate = this.logStartDate ? new Date(this.logStartDate).getTime() / 1000 : 0;
+        const endDate = this.logEndDate ? new Date(this.logEndDate).getTime() / 1000 + 86399 : Infinity; // 加86399秒表示当天结束
+        
+        result = result.filter(log => {
+          return log.timestamp >= startDate && log.timestamp <= endDate;
+        });
+      }
+      
+      this.filteredLogs = result;
+    },
+    
+    // 清空筛选条件
+    clearFilters() {
+      this.logSearchKeyword = '';
+      this.logStartDate = '';
+      this.logEndDate = '';
+      this.filteredLogs = [...this.logs];
     }
   }
 }
@@ -704,5 +840,164 @@ p {
   background-color: #409eff;
   color: white;
   border-color: #409eff;
+}
+
+/* 弹窗样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  width: 80%;
+  max-width: 900px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid #eee;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #999;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  color: #333;
+}
+
+.modal-body {
+  padding: 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.log-controls {
+  margin-bottom: 20px;
+}
+
+.search-box {
+  margin-bottom: 15px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.date-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.date-filter label {
+  font-size: 14px;
+  color: #333;
+}
+
+.date-input {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.clear-btn {
+  padding: 6px 12px;
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.clear-btn:hover {
+  background-color: #e0e0e0;
+}
+
+.log-list-container {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.log-list-modal {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 400px;
+  padding: 10px;
+  border: 1px solid #eee;
+  border-radius: 4px;
+}
+
+.log-list-modal .log-item {
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  background: #f9f9f9;
+  border-radius: 4px;
+  border-left: 3px solid #409eff;
+}
+
+.log-list-modal .log-time {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.log-list-modal .log-message {
+  font-size: 14px;
+  color: #333;
+  word-wrap: break-word;
+}
+
+@media (max-width: 768px) {
+  .date-filter {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .modal-content {
+    width: 95%;
+  }
 }
 </style>

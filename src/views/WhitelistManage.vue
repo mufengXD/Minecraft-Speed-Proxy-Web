@@ -100,7 +100,7 @@
         <input 
           type="text" 
           v-model="newUsername" 
-          placeholder="请输入用户名"
+          placeholder="请输入用户名(多个用户名请用;分隔)"
           @keyup.enter="confirmAdd"
           class="input-field"
         >
@@ -194,24 +194,52 @@ export default {
     
     async confirmAdd() {
       const username = this.newUsername.trim();
-      // 校验：不能为空且不能包含中文
+      // 校验：不能为空
       if (!username) {
         logManager.warning('请输入用户名');
         return;
       }
-      if (/[ -]*[\u4e00-\u9fa5]+/.test(username) || /[\u4e00-\u9fa5]/.test(username)) {
-        logManager.warning('用户名不能包含中文字符');
-        return;
+      
+      // 支持批量添加，用分号分隔
+      const usernames = username.split(';').map(name => name.trim()).filter(name => name);
+      
+      for (const name of usernames) {
+        if (/[\u4e00-\u9fa5]/.test(name)) {
+          logManager.warning(`用户名 "${name}" 不能包含中文字符`);
+          return;
+        }
       }
+      
       try {
-        logManager.info(`正在添加 ${username} 到白名单...`);
-        const response = await axios.post('/api/add_whitelist_user', { username });
-        if (response.data && response.data.status === 200) {
-          this.closeDialog();
-          await this.fetchWhitelist();
-          logManager.success(`成功添加 ${username} 到白名单`);
+        let successCount = 0;
+        let failCount = 0;
+        
+        for (const name of usernames) {
+          logManager.info(`正在添加 ${name} 到白名单...`);
+          const response = await axios.post('/api/add_whitelist_user', { username: name });
+          if (response.data && response.data.status === 200) {
+            successCount++;
+          } else {
+            failCount++;
+            logManager.error(`添加失败：${response.data?.message || '未知错误'}`);
+          }
+        }
+        
+        this.closeDialog();
+        await this.fetchWhitelist();
+        
+        if (usernames.length === 1) {
+          if (failCount === 0) {
+            logManager.success(`成功添加 ${usernames[0]} 到白名单`);
+          }
         } else {
-          logManager.error(`添加失败：${response.data?.message || '未知错误'}`);
+          if (failCount === 0) {
+            logManager.success(`成功批量添加 ${successCount} 个用户到白名单`);
+          } else if (successCount === 0) {
+            logManager.error(`批量添加失败，${failCount} 个用户添加失败`);
+          } else {
+            logManager.warning(`批量添加完成：成功 ${successCount} 个，失败 ${failCount} 个`);
+          }
         }
       } catch (error) {
         logManager.error(`添加失败：${error.response?.data?.message || error.message}`);
