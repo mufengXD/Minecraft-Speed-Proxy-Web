@@ -9,6 +9,9 @@ const axiosInstance = axios.create({
   timeout: 10000
 });
 
+// 添加一个标志位，用于防止重复弹窗
+let isUnauthorizedHandled = false;
+
 // 请求拦截器：自动添加 Authorize 头
 axiosInstance.interceptors.request.use(
   config => {
@@ -29,43 +32,62 @@ axiosInstance.interceptors.response.use(
   response => {
     // 检查响应体中是否包含401状态
     if (response.data && response.data.status === 401) {
-      // 清除本地 token
-      localStorage.removeItem('token');
+      // 如果当前在登录页面，则不处理401错误
+      if (window.location.pathname === '/' || window.location.pathname === '/src/App.vue') {
+        return response;
+      }
       
-      // 提示用户并跳转到登录页
-      alert('登录已过期，请重新登录');
-      
-      // 使用多种方式确保跳转成功
-      setTimeout(() => {
-        window.location.replace('/');
-      }, 100);
+      if (!isUnauthorizedHandled) {
+        isUnauthorizedHandled = true;
+        
+        // 清除本地 token
+        localStorage.removeItem('token');
+        
+        // 提示用户并跳转到登录页
+        alert('登录已过期，请重新登录');
+        
+        setTimeout(() => {
+          window.location.replace('/');
+        }, 100);
+      }
       
       return Promise.reject(new Error('Unauthorized'));
     }
     
-    // 请求成功，直接返回响应
     return response;
   },
   error => {
-    // 检查是否是 401 未授权错误（HTTP状态码）
     if (error.response && error.response.status === 401) {
-      // 清除本地 token
-      localStorage.removeItem('token');
+      // 如果当前在登录页面，则不处理401错误
+      if (window.location.pathname === '/' || window.location.pathname === '/src/App.vue') {
+        return Promise.reject(error);
+      }
       
-      // 提示用户并跳转到登录页
-      alert('登录已过期，请重新登录');
-      
-      // 使用多种方式确保跳转成功
-      setTimeout(() => {
-        window.location.replace('/');
-      }, 100);
+      // 只有当未处理过401错误时才执行登出逻辑
+      if (!isUnauthorizedHandled) {
+        isUnauthorizedHandled = true;
+        
+        // 清除本地 token
+        localStorage.removeItem('token');
+        
+        // 提示用户并跳转到登录页
+        alert('登录已过期，请重新登录');
+        
+        setTimeout(() => {
+          window.location.replace('/');
+        }, 100);
+      }
       
       return Promise.reject(error);
     }
     
-    // 其他错误正常抛出
     return Promise.reject(error);
   }
 );
+
+// 添加一个方法用于重置标志位，可以在登录成功后调用
+export function resetUnauthorizedHandler() {
+  isUnauthorizedHandled = false;
+}
 
 export default axiosInstance;
