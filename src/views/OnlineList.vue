@@ -105,9 +105,6 @@
           </div>
           <div class="log-subtitle clickable-area" @click="openLogModal">
             <span>点击查看详情</span>
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24">
-              <path fill="currentColor" d="M7 17L17 7m0 0H7m10 0v10"/>
-            </svg>
           </div>
         </div>
         <div class="log-container">

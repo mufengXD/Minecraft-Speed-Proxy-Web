@@ -6,7 +6,6 @@
       <div class="header-right">
         <div class="whitelist-status" :class="{ 'status-enabled': whitelistStatus, 'status-disabled': !whitelistStatus }" @click="toggleWhitelistStatus">
           <span>白名单状态：{{ whitelistStatus ? '开启' : '关闭' }}</span>
-          <!-- <i class="status-icon">{{ whitelistStatus ? '●' : '○' }}</i> -->
         </div>
         <div class="actions">
           <button class="action-btn blacklist-btn" @click="handleBlacklistManage">黑名单管理</button>

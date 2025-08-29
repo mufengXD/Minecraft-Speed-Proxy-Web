@@ -40,7 +40,7 @@ axiosInstance.interceptors.response.use(
       if (!isUnauthorizedHandled) {
         isUnauthorizedHandled = true;
         
-        // 清除本地 token
+
         localStorage.removeItem('token');
         
         // 提示用户并跳转到登录页
@@ -70,7 +70,7 @@ axiosInstance.interceptors.response.use(
         // 清除本地 token
         localStorage.removeItem('token');
         
-        // 提示用户并跳转到登录页
+
         alert('登录已过期，请重新登录');
         
         setTimeout(() => {

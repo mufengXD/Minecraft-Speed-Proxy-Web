@@ -19,7 +19,6 @@ class LogManager {
     });
   }
   
-  // 便捷方法
   success(message, duration = 3000) {
     this.emit({ message, type: 'success', duration });
   }
@@ -39,7 +38,7 @@ class LogManager {
 
 const logManager = new LogManager();
 
-// 添加到Vue原型，方便在组件中使用
+
 export const installLogManager = (Vue) => {
   Vue.prototype.$log = logManager;
 };
