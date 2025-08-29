@@ -43,7 +43,6 @@
               @keyup.enter="login"
               :disabled="LoginState"
             />
-            <div class="input-focus-line"></div>
           </div>
         </div>
         
@@ -136,7 +135,7 @@ import axios from './utils/axios.js'
             }
             
             setTimeout(() => {
-              window.location.href = '/src/main-ui.html'; // 跳转到 main-ui.html
+              window.location.href = './main-ui.html'; // 跳转到 main-ui.html
             }, 1000);
           } else if (result.status === 401) {
             this.loginSuccess = false;
@@ -389,21 +388,6 @@ html, body {
   background: #e9ecef;
   color: #6c757d;
   cursor: not-allowed;
-}
-
-.input-focus-line {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  width: 0;
-  height: 2px;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  transform: translateX(-50%);
-  transition: width 0.3s ease;
-}
-
-.password-input:focus + .input-focus-line {
-  width: 100%;
 }
 
 /* 登录按钮 */

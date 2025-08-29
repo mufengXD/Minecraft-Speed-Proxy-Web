@@ -1,51 +1,133 @@
 <template>
   <div class="grid-demo">
     <div class="grid-item">
-        <p>系统启动时长: {{ systemStartTime }}</p>
-        <p>默认代理IP:{{ "hypixel.net" }}</p>
-        <p>在线玩家数: {{ onlineUsers.length }}</p>
-    </div>
-    <div class="grid-item">
-      <h3 style="text-align:center;">累计在线时长前十/分钟</h3>
-      <div ref="barChart" style="width: 100%; height: 100%; position: relative;">
-        <div v-if="onlineUsers.length === 0" class="no-data" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10;">
-          暂无在线玩家数据
+      <div class="status-card">
+        <div class="status-header">
+          <div class="status-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+          </div>
+          <h3 class="status-title">系统状态</h3>
         </div>
-      </div>
-    </div>
-    <div class="grid-item">
-      <h3 style="text-align:center;">历史玩家数量</h3>
-      <div class="chart-controls">
-        <button 
-          v-for="option in timeRangeOptions" 
-          :key="option.key"
-          @click="changeTimeRange(option.key)"
-          :class="['time-btn', { 'active': currentTimeRange === option.key }]"
-        >
-          {{ option.label }}
-        </button>
-      </div>
-      <div ref="lineChart" style="width: 100%; height: calc(100% - 60px);"></div>
-    </div>
-    <div class="grid-item" @click="openLogModal" title="点击进入详情页面">
-      <h3 style="text-align:center;">后端日志</h3>
-      <div class="log-container">
-        <div v-if="logs.length === 0" class="no-data">
-          暂无日志数据
-        </div>
-        <div v-else class="log-list">
-          <div 
-            v-for="(log, index) in logs" 
-            :key="index" 
-            class="log-item"
-          >
-            <span class="log-time">{{ formatLogTime(log.timestamp) }}</span>
-            <span class="log-message">{{ log.message }}</span>
+        <div class="status-content">
+          <div class="status-item">
+            <div class="status-label">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/>
+              </svg>
+              运行时长
+            </div>
+            <div class="status-value">{{ systemStartTime }}</div>
+          </div>
+          <div class="status-item">
+            <div class="status-label">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              </svg>
+              默认代理
+            </div>
+            <div class="status-value proxy-server">hypixel.net</div>
+          </div>
+          <div class="status-item">
+            <div class="status-label">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M16 4c0-1.11.89-2 2-2s2 .89 2 2-.89 2-2 2-2-.89-2-2zm4 18v-6h2.5l-2.54-7.63A3.01 3.01 0 0 0 16.78 7L15 7.8l-.72-1.93L16.78 5A5.01 5.01 0 0 1 21.5 8.5L24 16h-3v6h-1zM12.5 11.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5S11 9.17 11 10s.67 1.5 1.5 1.5zm1.5 1h-3c-1.1 0-2 .9-2 2v5.5h2V22h3v-2.5h2V14c0-1.1-.9-2-2-2z"/>
+              </svg>
+              在线玩家
+            </div>
+            <div class="status-value player-count">{{ onlineUsers.length }} 人</div>
           </div>
         </div>
       </div>
-      <div class="refresh-info">
-        <p style="font-size: 14px; color: #666;">数据每15秒自动刷新</p>
+    </div>
+    <div class="grid-item">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M22 21H2l4-7h3l2 4h3l2-7h6v10z"/>
+            </svg>
+          </div>
+          <h3 class="chart-title">累计在线时长前十</h3>
+          <div class="chart-subtitle">单位：分钟</div>
+        </div>
+        <div ref="barChart" style="width: 100%; height: calc(100% - 60px); position: relative;">
+          <div v-if="onlineUsers.length === 0" class="no-data">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+            </svg>
+            <span>暂无在线玩家数据</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="grid-item">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>
+            </svg>
+          </div>
+          <h3 class="chart-title">历史玩家数量</h3>
+          <div class="chart-subtitle">实时监控</div>
+        </div>
+        <div class="chart-controls">
+          <button 
+            v-for="option in timeRangeOptions" 
+            :key="option.key"
+            @click="changeTimeRange(option.key)"
+            :class="['time-btn', { 'active': currentTimeRange === option.key }]"
+          >
+            {{ option.label }}
+          </button>
+        </div>
+        <div ref="lineChart" style="width: 100%; height: calc(100% - 100px);"></div>
+      </div>
+    </div>
+    <div class="grid-item">
+      <div class="log-card">
+        <div class="log-header">
+          <div class="log-header-left">
+            <div class="log-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6m4 18H6V4h7v5h5v11Z"/>
+              </svg>
+            </div>
+            <h3 class="log-title">后端日志</h3>
+            <div class="refresh-indicator" @mouseenter="showTooltip = true" @mouseleave="showTooltip = false">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+              </svg>
+              <div v-if="showTooltip" class="custom-tooltip">数据每15秒自动刷新</div>
+            </div>
+          </div>
+          <div class="log-subtitle clickable-area" @click="openLogModal">
+            <span>点击查看详情</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M7 17L17 7m0 0H7m10 0v10"/>
+            </svg>
+          </div>
+        </div>
+        <div class="log-container">
+          <div v-if="logs.length === 0" class="no-data">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+            </svg>
+            <span>暂无日志数据</span>
+          </div>
+          <div v-else class="log-list">
+            <div 
+              v-for="(log, index) in logs" 
+              :key="index" 
+              class="log-item"
+            >
+              <span class="log-time">{{ formatLogTime(log.timestamp) }}</span>
+              <span class="log-message">{{ log.message }}</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -54,7 +136,15 @@
   <div v-if="showLogModal" class="modal-overlay" @click="closeLogModal">
     <div class="modal-content" @click.stop>
       <div class="modal-header">
-        <h3>后端日志</h3>
+        <div class="modal-title-section">
+          <h3>后端日志</h3>
+          <div class="modal-refresh-indicator" @mouseenter="showModalTooltip = true" @mouseleave="showModalTooltip = false">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            </svg>
+            <div v-if="showModalTooltip" class="modal-custom-tooltip">数据每15秒自动刷新</div>
+          </div>
+        </div>
         <button class="close-btn" @click="closeLogModal">&times;</button>
       </div>
       
@@ -144,7 +234,11 @@ export default {
       logSearchKeyword: '',
       logStartDate: '',
       logEndDate: '',
-      filteredLogs: []
+      filteredLogs: [],
+      
+      // tooltip控制
+      showTooltip: false,
+      showModalTooltip: false
     }
   },
   
@@ -731,6 +825,7 @@ export default {
 .grid-item:nth-child(4) {
   width: 550px;
   height: 350px;
+  cursor: default;
 }
 
 p {
@@ -742,13 +837,317 @@ p {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+/* 状态卡片样式 */
+.status-card {
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.status-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid rgba(64, 158, 255, 0.2);
+}
+
+.status-icon {
+  margin-right: 8px;
+  color: #409eff;
+  display: flex;
+  align-items: center;
+}
+
+.status-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.status-title {
+  color: #2c3e50;
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+.status-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.status-item {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 8px;
+  border-left: 3px solid #409eff;
+  transition: all 0.3s ease;
+  min-height: 0;
+  flex: 1;
+}
+
+.status-item:hover {
+  transform: translateX(2px);
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.2);
+}
+
+.status-label {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: #6c757d;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.status-label svg {
+  margin-right: 6px;
+  color: #409eff;
+  width: 14px;
+  height: 14px;
+}
+
+.status-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  word-break: break-all;
+}
+
+.proxy-server {
+  color: #28a745;
+  font-family: 'Courier New', monospace;
+}
+
+.player-count {
+  color: #17a2b8;
+}
+
+/* 图表卡片样式 */
+.chart-card {
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid rgba(64, 158, 255, 0.2);
+}
+
+.chart-icon {
+  margin-right: 12px;
+  color: #409eff;
+  display: flex;
+  align-items: center;
+}
+
+.chart-title {
+  color: #2c3e50;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  margin-right: 12px;
+}
+
+.chart-subtitle {
+  font-size: 12px;
+  color: #6c757d;
+  background: #e9ecef;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+/* 日志卡片样式 */
+.log-card {
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.log-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(64, 158, 255, 0.15);
+}
+
+.log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid rgba(64, 158, 255, 0.2);
+  position: relative;
+}
+
+.log-header-left {
+  display: flex;
+  align-items: center;
+}
+
+.log-icon {
+  margin-right: 12px;
+  color: #409eff;
+  display: flex;
+  align-items: center;
+}
+
+.log-title {
+  color: #2c3e50;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  margin-right: 8px;
+}
+
+.refresh-indicator {
+  margin-right: 12px;
+  color: #28a745;
+  display: flex;
+  align-items: center;
+  cursor: default;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+  position: relative;
+}
+
+.refresh-indicator:hover {
+  opacity: 1;
+}
+
+.custom-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1000;
+  animation: tooltipFadeIn 0.15s ease-out;
+}
+
+.custom-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.8);
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.log-subtitle {
+  font-size: 12px;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.clickable-area {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  transition: all 0.2s;
+  background: #e9ecef;
+  color: #6c757d;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  width: fit-content;
+}
+
+.clickable-area span {
+  line-height: 1;
+}
+
+.clickable-area:hover {
+  background: #409eff;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+}
+
+.clickable-area svg {
+  vertical-align: middle;
+  transition: transform 0.2s;
+}
+
+.clickable-area:hover svg {
+  transform: translateX(2px);
+}
+
+.auto-refresh-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #28a745;
+  background: rgba(40, 167, 69, 0.1);
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 500;
+  border: 1px solid rgba(40, 167, 69, 0.2);
+}
+
 .no-data {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   height: 100%;
   color: #999;
   font-size: 16px;
+  gap: 12px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+}
+
+.no-data svg {
+  opacity: 0.5;
+}
+
+.no-data span {
+  font-weight: 500;
 }
 
 .refresh-info {
@@ -875,9 +1274,50 @@ p {
   border-bottom: 1px solid #eee;
 }
 
-.modal-header h3 {
+.modal-title-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-title-section h3 {
   margin: 0;
   color: #333;
+}
+
+.modal-refresh-indicator {
+  color: #666;
+  cursor: default;
+  position: relative;
+}
+
+.modal-refresh-indicator svg {
+  vertical-align: middle;
+}
+
+.modal-custom-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1000;
+  animation: tooltipFadeIn 0.15s ease-out;
+}
+
+.modal-custom-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.8);
 }
 
 .close-btn {
