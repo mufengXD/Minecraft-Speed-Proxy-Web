@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // 可统一修改请求前缀
-const API_BASE_URL = 'http://127.0.0.1:8081';
+const API_BASE_URL = 'http://127.0.0.1:20220';
 
 // 创建 axios 实例
 const axiosInstance = axios.create({

@@ -39,10 +39,50 @@
               <path fill="currentColor" d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
             </svg>
           </div>
-          <div class="banner-item" @click="openGitHub" title="前往项目GitHub">
+          <div class="banner-item github-dropdown" @click="toggleGitHubFlyout" title="项目GitHub" :class="{ 'active': showGitHubFlyout }">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
               <path fill="currentColor" d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5c.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34c-.46-1.16-1.11-1.47-1.11-1.47c-.91-.62.07-.6.07-.6c1 .07 1.53 1.03 1.53 1.03c.87 1.52 2.34 1.07 2.91.83c.09-.65.35-1.09.63-1.34c-2.22-.25-4.55-1.11-4.55-4.92c0-1.11.38-2 1.03-2.71c-.1-.25-.45-1.29.1-2.64c0 0 .84-.27 2.75 1.02c.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02c.55 1.35.2 2.39.1 2.64c.65.71 1.03 1.6 1.03 2.71c0 3.82-2.34 4.66-4.57 4.91c.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"/>
             </svg>
+            <div v-if="showGitHubFlyout" class="github-flyout" @click.stop>
+              <div class="flyout-header">
+                <h4>开源项目</h4>
+                <span class="project-info">查看源代码</span>
+              </div>
+              <div class="flyout-content">
+                <a href="https://github.com/mufengXD/Minecraft-Speed-Proxy-Web" target="_blank" class="github-link">
+                  <div class="link-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5c.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34c-.46-1.16-1.11-1.47-1.11-1.47c-.91-.62.07-.6.07-.6c1 .07 1.53 1.03 1.53 1.03c.87 1.52 2.34 1.07 2.91.83c.09-.65.35-1.09.63-1.34c-2.22-.25-4.55-1.11-4.55-4.92c0-1.11.38-2 1.03-2.71c-.1-.25-.45-1.29.1-2.64c0 0 .84-.27 2.75 1.02c.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02c.55 1.35.2 2.39.1 2.64c.65.71 1.03 1.6 1.03 2.71c0 3.82-2.34 4.66-4.57 4.91c.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"/>
+                    </svg>
+                  </div>
+                  <div class="link-content">
+                    <div class="link-title">管理控制面板</div>
+                    <div class="link-subtitle">Web界面 • by @mufengXD</div>
+                  </div>
+                  <div class="link-arrow">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M7 17L17 7m0 0H7m10 0v10"/>
+                    </svg>
+                  </div>
+                </a>
+                <a href="https://github.com/AllesUgo/Minecraft-Speed-Proxy" target="_blank" class="github-link">
+                  <div class="link-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5c.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34c-.46-1.16-1.11-1.47-1.11-1.47c-.91-.62.07-.6.07-.6c1 .07 1.53 1.03 1.53 1.03c.87 1.52 2.34 1.07 2.91.83c.09-.65.35-1.09.63-1.34c-2.22-.25-4.55-1.11-4.55-4.92c0-1.11.38-2 1.03-2.71c-.1-.25-.45-1.29.1-2.64c0 0 .84-.27 2.75 1.02c.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02c.55 1.35.2 2.39.1 2.64c.65.71 1.03 1.6 1.03 2.71c0 3.82-2.34 4.66-4.57 4.91c.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"/>
+                    </svg>
+                  </div>
+                  <div class="link-content">
+                    <div class="link-title">代理服务程序</div>
+                    <div class="link-subtitle">代理服务 • by @AllesUgo</div>
+                  </div>
+                  <div class="link-arrow">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M7 17L17 7m0 0H7m10 0v10"/>
+                    </svg>
+                  </div>
+                </a>
+              </div>
+            </div>
           </div>
           <div class="banner-item" @click="openSettings" title="打开设置">
             <svg width="20" height="20" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
@@ -97,11 +137,27 @@ export default {
         { name: '代理管理', path: '/Agency_management' }
       ],
       showSettings: false,
+      showGitHubFlyout: false,
       maxUsersInput: '',
       settingsMsg: ''
     }
   },
+  mounted() {
+    // 添加全局点击监听器来关闭flyout
+    document.addEventListener('click', this.handleGlobalClick);
+  },
+  beforeUnmount() {
+    // 移除全局点击监听器
+    document.removeEventListener('click', this.handleGlobalClick);
+  },
   methods: {
+    handleGlobalClick(event) {
+      // 检查点击是否在GitHub下拉菜单外部
+      const githubDropdown = event.target.closest('.github-dropdown');
+      if (!githubDropdown && this.showGitHubFlyout) {
+        this.closeGitHubFlyout();
+      }
+    },
     go(path) {
       this.$router.push(path)
     },
@@ -113,6 +169,12 @@ export default {
       });
       // 调用GlobalLog提示
       logManager.success('已刷新');
+    },
+    toggleGitHubFlyout() {
+      this.showGitHubFlyout = !this.showGitHubFlyout;
+    },
+    closeGitHubFlyout() {
+      this.showGitHubFlyout = false;
     },
     openSettings() {
       this.showSettings = true;
@@ -140,9 +202,6 @@ export default {
       } catch (err) {
         this.settingsMsg = '请求失败';
       }
-    },
-    openGitHub() {
-      window.open('https://github.com/AllesUgo/Minecraft-Speed-Proxy', '_blank');
     },
     async logout() {
       try {
@@ -316,6 +375,135 @@ export default {
 .banner-item svg {
   fill: currentColor;
 }
+
+/* GitHub下拉菜单样式 */
+.github-dropdown {
+  position: relative;
+}
+
+.github-dropdown.active {
+  background: #337bb7;
+}
+
+.github-flyout {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 280px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  overflow: hidden;
+  animation: flyoutFadeIn 0.2s ease-out;
+}
+
+.flyout-header {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #f8f9fa;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.flyout-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.powered-by {
+  font-size: 11px;
+  color: #6c757d;
+  font-weight: 500;
+  background: rgba(108, 117, 125, 0.1);
+  padding: 2px 6px;
+  border-radius: 8px;
+  letter-spacing: 0.2px;
+}
+
+.project-info {
+  font-size: 11px;
+  color: #6c757d;
+  font-weight: 500;
+  background: rgba(108, 117, 125, 0.1);
+  padding: 2px 6px;
+  border-radius: 8px;
+  letter-spacing: 0.2px;
+}
+
+.flyout-content {
+  padding: 8px 0;
+}
+
+.github-link {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  text-decoration: none;
+  color: #2c3e50;
+  transition: all 0.2s ease;
+  border: none;
+  background: none;
+}
+
+.github-link:hover {
+  background: #f8f9fa;
+  transform: translateX(2px);
+}
+
+.link-icon {
+  margin-right: 12px;
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.link-content {
+  flex: 1;
+}
+
+.link-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #2c3e50;
+  margin-bottom: 2px;
+}
+
+.link-subtitle {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.link-arrow {
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.github-link:hover .link-arrow {
+  transform: translate(2px, -2px);
+}
+
+@keyframes flyoutFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .content { 
   flex: 1; 
   padding: 24px; 
