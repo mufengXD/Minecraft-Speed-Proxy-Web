@@ -6,10 +6,15 @@ class LogManager {
   
   addListener(callback) {
     this.listeners.add(callback);
-    return () => this.listeners.delete(callback);
+    console.log('LogManager: Listener added, total listeners:', this.listeners.size);
+    return () => {
+      this.listeners.delete(callback);
+      console.log('LogManager: Listener removed, total listeners:', this.listeners.size);
+    };
   }
   
   emit(message) {
+    console.log('LogManager: Emitting message to', this.listeners.size, 'listeners:', message);
     this.listeners.forEach(callback => {
       try {
         callback(message);

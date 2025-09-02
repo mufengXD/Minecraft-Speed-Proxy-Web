@@ -8,7 +8,7 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 export default defineConfig({
   base: './', // 设置为相对路径，解决部署到子目录的问题
   build: {
-    outDir: 'build', // 修改打包目录为 build/
+    outDir: '../build', // 修改打包目录为 build/
     rollupOptions: {
       input: {
         main: fileURLToPath(new URL('./index.html', import.meta.url)),
@@ -22,7 +22,8 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      'vue': 'vue/dist/vue.esm-bundler.js'
     },
   },
   server: {

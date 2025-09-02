@@ -27,7 +27,7 @@
               </svg>
               默认代理
             </div>
-            <div class="status-value proxy-server">hypixel.net</div>
+            <div class="status-value proxy-server">{{ defaultProxy }}</div>
           </div>
           <div class="status-item">
             <div class="status-label">
@@ -215,6 +215,7 @@ export default {
       chartHeight: 220,
       onlineUsers: [],
       systemStartTime: "获取中...",
+      defaultProxy: "获取中...",
       logs: [],
       refreshTimer: null,
       currentTimeRange: 'hour', // 当前选择的时间范围
@@ -246,6 +247,9 @@ export default {
     // 获取系统启动时长
     await this.fetchSystemInfo();
     
+    // 获取默认代理IP
+    await this.fetchDefaultProxy();
+    
     // 获取后端日志
     await this.fetchLogs();
     
@@ -261,6 +265,7 @@ export default {
     this.refreshTimer = setInterval(async () => {
       await this.fetchOnlineUsers();
       await this.fetchSystemInfo();
+      await this.fetchDefaultProxy();
       await this.fetchLogs();
       await this.fetchLineChartData();
       this.updateCharts();
@@ -383,6 +388,22 @@ export default {
       } catch (error) {
         console.error('获取折线图数据失败:', error);
         this.lineChartData = [];
+      }
+    },
+    
+    async fetchDefaultProxy() {
+      try {
+        const response = await axios.get('/api/get_user_proxies');
+        if (response.data.status === 200) {
+          this.defaultProxy = response.data.default_proxy || "未设置";
+          console.log('获取默认代理成功:', response.data.default_proxy);
+        } else {
+          console.error('获取默认代理失败:', response.data.message);
+          this.defaultProxy = "获取失败";
+        }
+      } catch (error) {
+        console.error('获取默认代理失败:', error);
+        this.defaultProxy = "网络错误";
       }
     },
     
@@ -707,6 +728,7 @@ export default {
     async refreshData() {
       await this.fetchOnlineUsers();
       await this.fetchSystemInfo();
+      await this.fetchDefaultProxy();
       await this.fetchLogs();
       await this.fetchLineChartData();
       this.updateCharts();

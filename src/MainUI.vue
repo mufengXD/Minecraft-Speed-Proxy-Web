@@ -23,6 +23,9 @@
             <svg v-else-if="item.path === '/Agency_management'" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
               <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-.61.08-1.21.21-1.78L9.99 16v1c0 1.1.9 2 2 2v1.93C7.06 20.48 4 16.69 4 12zm14.89 2.41c-.26-.81-1-1.41-1.89-1.41h-1v-3c0-.55-.45-1-1-1h-6v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41C17.92 5.77 20 8.65 20 12c0 .83-.13 1.64-.36 2.41z"/>
             </svg>
+            <svg v-else-if="item.path === '/MOTD_maker'" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+              <path fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6m4 18H6V4h7v5h5v11Z"/>
+            </svg>
           </div>
           <span class="item-text">{{ item.name }}</span>
         </div>
@@ -120,21 +123,29 @@
         <div v-if="settingsMsg" class="settings-msg">{{ settingsMsg }}</div>
       </div>
     </div>
+    
+    <!-- 全局日志组件 -->
+    <GlobalLog />
   </div>
 </template>
 
 <script>
 import axios from '@/utils/axios.js'
 import logManager from '@/utils/logManager.js'
+import GlobalLog from '@/components/GlobalLog.vue'
 
 export default {
   name: 'MainUI',
+  components: {
+    GlobalLog
+  },
   data() {
     return {
       menu: [
         { name: '主页', path: '/online' },
         { name: '用户管理', path: '/user_management' },
-        { name: '代理管理', path: '/Agency_management' }
+        { name: '代理管理', path: '/Agency_management' },
+        { name: 'MOTD制作', path: '/MOTD_maker' }
       ],
       showSettings: false,
       showGitHubFlyout: false,
@@ -506,9 +517,10 @@ export default {
 
 .content { 
   flex: 1; 
-  padding: 24px; 
+  padding: 12px; 
   overflow: auto;
-  /* background-image: linear-gradient(to top, lightgrey 0%, lightgrey 1%, #e0e0e0 26%, #efefef 48%, #d9d9d9 75%, #bcbcbc 100%); */
+  box-sizing: border-box;
+  min-height: 0;
 }
 .settings-modal {
   position: fixed;
