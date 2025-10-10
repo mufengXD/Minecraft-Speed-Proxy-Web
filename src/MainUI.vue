@@ -145,7 +145,7 @@ export default {
         { name: '主页', path: '/online' },
         { name: '用户管理', path: '/user_management' },
         { name: '代理管理', path: '/Agency_management' },
-        { name: 'MOTD制作', path: '/MOTD_maker' }
+        // { name: 'MOTD制作', path: '/MOTD_maker' }
       ],
       showSettings: false,
       showGitHubFlyout: false,
